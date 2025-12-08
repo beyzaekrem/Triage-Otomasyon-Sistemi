@@ -1,0 +1,489 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle, FilteringTextInputFormatter;
+
+import '../constants/app_colors.dart';
+import '../constants/app_strings.dart';
+import '../models/patient.dart';
+import '../models/triage_request.dart';
+import '../models/triage_response.dart';
+import '../services/storage_service.dart';
+import '../services/triage_service.dart';
+import '../utils/validators.dart';
+import 'triage_result_page.dart';
+
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _tcCtrl = TextEditingController();
+
+  List<Map<String, dynamic>> _categories = [];
+  final Set<String> _picked = {};
+  String _search = "";
+  bool _loading = true;
+  bool _submitting = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _tcCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final raw =
+          await rootBundle.loadString('assets/patient_symptoms_by_category.json');
+      final data = jsonDecode(raw);
+      final list = (data['categories'] as List);
+
+      _categories = list
+          .map((e) => {
+                'name': e['name']?.toString() ?? '',
+                'items': (e['items'] as List).map((x) => x.toString()).toList(),
+              })
+          .cast<Map<String, dynamic>>()
+          .toList();
+
+      setState(() {
+        _loading = false;
+        _errorMessage = null;
+      });
+    } catch (e) {
+      debugPrint('Kategori yükleme hatası: $e');
+      setState(() {
+        _loading = false;
+        _errorMessage = AppStrings.errorLoadingSymptoms;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppStrings.errorLoadingSymptoms),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_picked.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppStrings.selectAtLeastOneSymptom),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final req = TriageRequest(
+        fullName: _nameCtrl.text.trim(),
+        nationalId: _tcCtrl.text.trim(),
+        symptoms: _picked.toList(),
+      );
+
+      TriageResponse? apiResp;
+      try {
+        apiResp = await TriageService().submitTriage(req);
+      } catch (e) {
+        // API hatasında fallback'e devam ediyoruz
+        debugPrint('API triage hatası: $e');
+      }
+
+      // Offline fallback kural eşleştirme
+      final fallbackRule =
+          await TriageService().matchBySymptoms(_picked.toList());
+
+      // Sıra bilgisi için backend kuyruğu dene (opsiyonel)
+      final queueStatus =
+          await TriageService().fetchQueueStatus(req.nationalId);
+
+      final queueNo = apiResp?.queueNumber ??
+          queueStatus?.queueNumber ??
+          _generateQueueNumber();
+
+      final p = Patient(
+        fullName: req.fullName,
+        nationalId: req.nationalId,
+        symptoms: req.symptoms,
+        queueNumber: queueNo,
+        urgencyLabel: apiResp?.urgencyLabel ??
+            fallbackRule?.urgencyLabel ??
+            AppStrings.evaluationRequired,
+        urgencyLevel: apiResp?.urgencyLevel ??
+            fallbackRule?.urgencyLevel ??
+            3,
+        responseText: apiResp?.responseText ??
+            fallbackRule?.response ??
+            AppStrings.defaultResponse,
+        createdAt: DateTime.now(),
+      );
+
+      await StorageService.saveLastPatient(p);
+
+      if (!mounted) return;
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const TriageResultPage(),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _submitting = false;
+        _errorMessage = 'Kayıt oluşturulurken hata oluştu: ${e.toString()}';
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? AppStrings.errorOccurred),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9F0F6),
+      appBar: AppBar(
+        title: const Text(AppStrings.registerTitle),
+      ),
+
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 56,
+          child: ElevatedButton.icon(
+            icon: _submitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.check),
+            onPressed: _submitting ? null : _submit,
+            label: Text(
+              _submitting ? 'Kaydediliyor...' : AppStrings.createRecord,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ),
+
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+            )
+          : _errorMessage != null && _categories.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: AppColors.error),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadCategories,
+                        child: const Text('Tekrar Dene'),
+                      ),
+                    ],
+                  ),
+                )
+              : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildFormHeader()),
+                SliverToBoxAdapter(child: _buildSearchCard()),
+                // Kategoriler
+                SliverList.builder(
+                  itemCount: _categories.length,
+                  itemBuilder: (context, ci) {
+                    final cat = _categories[ci];
+                    final title = cat['name'] as String;
+                    final items = (cat['items'] as List).cast<String>();
+
+                    // Global aramaya göre filtre
+                    final hasSearch = _search.trim().isNotEmpty;
+                    final filtered = hasSearch
+                        ? items
+                            .where((s) => s
+                                .toLowerCase()
+                                .contains(_search.toLowerCase()))
+                            .toList()
+                        : items;
+
+                    if (filtered.isEmpty && hasSearch) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final selectedCount =
+                        items.where((s) => _picked.contains(s)).length;
+
+                    return Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.black12),
+                        ),
+                        child: Theme(
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            // Sadece metin: başlıkta Row yok, overflow riski yok
+                            title: Text(
+                              title,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            children: [
+                              // Üst bilgi satırı: seçili sayısı + kategori aksiyonları
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 4, right: 4, top: 6),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        selectedCount > 0
+                                            ? "$selectedCount ${AppStrings.selected.toLowerCase()}"
+                                            : "${AppStrings.itemsCount}: ${filtered.length}",
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          for (final s in filtered) {
+                                            _picked.add(s);
+                                          }
+                                        });
+                                      },
+                                      child: const Text(AppStrings.selectAll),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          for (final s in filtered) {
+                                            _picked.remove(s);
+                                          }
+                                        });
+                                      },
+                                      child: const Text(AppStrings.clear),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filtered.length,
+                                itemBuilder: (context, i) {
+                                  final s = filtered[i];
+                                  final selected = _picked.contains(s);
+                                  return CheckboxListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 4),
+                                    visualDensity: VisualDensity.compact,
+                                    title: Text(
+                                      s,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    value: selected,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        if (val == true) {
+                                          _picked.add(s);
+                                        } else {
+                                          _picked.remove(s);
+                                        }
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildFormHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: AppStrings.fullName,
+                prefixIcon: Icon(Icons.person),
+              ),
+              textInputAction: TextInputAction.next,
+              textCapitalization: TextCapitalization.words,
+              validator: Validators.validateFullName,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _tcCtrl,
+              decoration: const InputDecoration(
+                labelText: AppStrings.nationalId,
+                prefixIcon: Icon(Icons.badge),
+                counterText: "",
+              ),
+              keyboardType: TextInputType.number,
+              maxLength: 11,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: Validators.validateTcKimlikNo,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchCard() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Column(
+          children: [
+            TextField(
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: AppStrings.searchSymptom,
+              ),
+              onChanged: (v) => setState(() => _search = v),
+            ),
+            const SizedBox(height: 8),
+            // Seçili özet satırı (Wrap ile, taşma yapmaz)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => setState(_picked.clear),
+                icon: const Icon(Icons.clear),
+                label: const Text(AppStrings.clearSelections),
+              ),
+            ),
+            if (_picked.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "${AppStrings.selected} (${_picked.length}):",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _picked
+                    .take(12) // çoksa ilk 12 taneyi göster
+                    .map(
+                      (e) => Chip(
+                        label: Text(
+                          e,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    )
+                    .toList(),
+              ),
+              if (_picked.length > 12)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    "+${_picked.length - 12} ${AppStrings.more}",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  int _generateQueueNumber() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return (now % 1000) + 100;
+  }
+}
