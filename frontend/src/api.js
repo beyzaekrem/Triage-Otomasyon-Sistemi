@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:8080/api';
+const BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8080/api').replace(/\/$/, '');
 
 export const encodeCredentials = (username, password) => btoa(`${username}:${password}`);
 export const decodeCredentials = (encoded) => {
@@ -15,6 +15,10 @@ const authHeader = () => {
 };
 
 const handleResponse = async (res) => {
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const requestId = res.headers.get('x-request-id') || null;
+
     if (res.status === 401) {
         localStorage.removeItem('auth');
         localStorage.removeItem('role');
@@ -22,10 +26,18 @@ const handleResponse = async (res) => {
         throw new Error('Oturum süresi doldu');
     }
     if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: 'İstek başarısız' }));
-        throw new Error(error.message || 'İstek başarısız');
+        const error = isJson ? await res.json().catch(() => null) : null;
+        const message = error?.message || error?.error || `İstek başarısız (HTTP ${res.status})`;
+        const err = new Error(message);
+        err.status = res.status;
+        err.requestId = requestId;
+        err.timestamp = new Date().toISOString();
+        if (res.status === 429) {
+            err.message = 'Çok fazla istek. Lütfen birazdan tekrar deneyin.';
+        }
+        throw err;
     }
-    return res.json();
+    return isJson ? res.json() : res.text();
 };
 
 export const apiGet = (path) =>

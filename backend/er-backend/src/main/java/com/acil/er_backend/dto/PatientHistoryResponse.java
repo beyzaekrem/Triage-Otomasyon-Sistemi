@@ -5,6 +5,7 @@ import com.acil.er_backend.model.DoctorNote;
 import com.acil.er_backend.model.Patient;
 import com.acil.er_backend.model.TriageRecord;
 import java.util.List;
+import java.time.LocalDateTime;
 
 public class PatientHistoryResponse {
     private Patient patient;
@@ -14,6 +15,7 @@ public class PatientHistoryResponse {
     private int totalAppointments;
     private int totalTriageRecords;
     private int totalDoctorNotes;
+    private LocalDateTime updatedAt;
 
     public Patient getPatient() { return patient; }
     public void setPatient(Patient patient) { this.patient = patient; }
@@ -39,4 +41,6 @@ public class PatientHistoryResponse {
     public int getTotalAppointments() { return totalAppointments; }
     public int getTotalTriageRecords() { return totalTriageRecords; }
     public int getTotalDoctorNotes() { return totalDoctorNotes; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

@@ -9,6 +9,7 @@ public class DashboardStats {
     private int inProgress;
     private int done;
     private int noShow;
+    private int doneLastHour;
     private Map<String, Integer> triageLevels;
     private Double avgWaitTime;
 
@@ -24,6 +25,8 @@ public class DashboardStats {
     public void setDone(int done) { this.done = done; }
     public int getNoShow() { return noShow; }
     public void setNoShow(int noShow) { this.noShow = noShow; }
+    public int getDoneLastHour() { return doneLastHour; }
+    public void setDoneLastHour(int doneLastHour) { this.doneLastHour = doneLastHour; }
     public Map<String, Integer> getTriageLevels() { return triageLevels; }
     public void setTriageLevels(Map<String, Integer> triageLevels) { this.triageLevels = triageLevels; }
     public Double getAvgWaitTime() { return avgWaitTime; }

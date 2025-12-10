@@ -6,7 +6,7 @@ import com.acil.er_backend.model.AppointmentStatus;
 import java.util.List;
 
 public interface AppointmentService {
-    Appointment createAppointment(String patientTc, String chiefComplaint, Integer urgencySelfAssessment);
+    Appointment createAppointment(String patientTc, String chiefComplaint, String basicSymptomsCsv);
     List<Appointment> getTodayAppointments();
     List<Appointment> getTodayAppointmentsByStatus(AppointmentStatus status);
     Appointment updateStatus(Long id, AppointmentStatus status);

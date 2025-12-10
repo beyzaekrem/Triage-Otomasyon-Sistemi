@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
+import { apiGet } from '../api';
 
 const WaitingRoom = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [time, setTime] = useState(new Date());
 
     const fetchData = async () => {
         try {
-            const res = await fetch('http://localhost:8080/api/appointments/waiting-room');
-            const json = await res.json();
+            const json = await apiGet('/appointments/waiting-room');
             setData(json);
+            setError(null);
         } catch (err) {
             console.error('Veri yüklenemedi:', err);
+            setError(err.message || 'Veri yüklenemedi');
         } finally {
             setLoading(false);
         }
@@ -32,6 +35,16 @@ const WaitingRoom = () => {
             <div className="waiting-room-loading">
                 <div className="spinner"></div>
                 <p>Yükleniyor...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="waiting-room-error">
+                <div className="error-icon">⚠️</div>
+                <p>{error}</p>
+                <button onClick={fetchData} className="btn-retry">Tekrar Dene</button>
             </div>
         );
     }

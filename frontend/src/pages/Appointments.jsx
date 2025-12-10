@@ -23,6 +23,7 @@ const Appointments = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL');
+    const [dateFilter, setDateFilter] = useState('TODAY');
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -52,9 +53,23 @@ const Appointments = () => {
         }
     };
 
-    const filtered = filter === 'ALL' 
+    const byStatus = filter === 'ALL' 
         ? appointments 
         : appointments.filter(a => a.status === filter);
+
+    const byDate = byStatus.filter((a) => {
+        if (!a.createdAt) return true;
+        const created = new Date(a.createdAt);
+        const now = new Date();
+        if (dateFilter === 'TODAY') {
+            return created.toDateString() === now.toDateString();
+        }
+        if (dateFilter === '7D') {
+            const diff = (now - created) / (1000 * 60 * 60 * 24);
+            return diff <= 7;
+        }
+        return true;
+    });
 
     if (loading) return <div className="loading">Yükleniyor...</div>;
 
@@ -62,6 +77,17 @@ const Appointments = () => {
         <div className="appointments-page">
             <div className="page-header">
                 <h1>📋 Randevular</h1>
+                <div className="date-filters">
+                    {['TODAY', '7D', 'ALL'].map((d) => (
+                        <button
+                            key={d}
+                            className={`filter-chip ${dateFilter === d ? 'active' : ''}`}
+                            onClick={() => setDateFilter(d)}
+                        >
+                            {d === 'TODAY' ? 'Bugün' : d === '7D' ? 'Son 7 gün' : 'Tümü'}
+                        </button>
+                    ))}
+                </div>
                 <div className="filter-tabs">
                     {['ALL', 'WAITING', 'CALLED', 'IN_PROGRESS', 'DONE', 'NO_SHOW'].map(s => (
                         <button
@@ -81,13 +107,13 @@ const Appointments = () => {
             </div>
 
             <div className="appointments-list">
-                {filtered.length === 0 ? (
+                {byDate.length === 0 ? (
                     <div className="empty-state">
                         <span className="empty-icon">📭</span>
                         <p>Randevu bulunamadı</p>
                     </div>
                 ) : (
-                    filtered.map(ap => (
+                    byDate.map(ap => (
                         <div key={ap.id} className="appointment-card">
                             <div className="card-header">
                                 <div className="queue-badge">{ap.queueNumber}</div>

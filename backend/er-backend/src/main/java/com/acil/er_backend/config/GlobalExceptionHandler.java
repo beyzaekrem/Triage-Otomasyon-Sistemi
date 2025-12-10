@@ -27,9 +27,17 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
+        // Log the full exception for debugging (in production, use proper logging)
+        ex.printStackTrace();
+        String message = ex.getMessage() != null ? ex.getMessage() : "Beklenmeyen bir hata oluştu.";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("Sunucu hatası: " + ex.getMessage()));
+                .body(ApiResponse.error("Sunucu hatası: " + message));
     }
 }

@@ -72,7 +72,19 @@ const DoctorNotes = () => {
         }
     };
 
-    if (loading) return <div className="loading">Yükleniyor...</div>;
+    const parseSuggestions = (jsonStr) => {
+        if (!jsonStr) return [];
+        try {
+            return JSON.parse(jsonStr);
+        } catch {
+            return [];
+        }
+    };
+
+    if (loading) return <div className="loading"><div className="spinner"></div><p>Yükleniyor...</p></div>;
+
+    const latestTriage = appointment?.triageRecords?.[0];
+    const suggestions = latestTriage?.suggestionsJson ? parseSuggestions(latestTriage.suggestionsJson) : [];
 
     return (
         <div className="form-page">
@@ -97,6 +109,33 @@ const DoctorNotes = () => {
                             {tr.notes && <span>Not: {tr.notes}</span>}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {suggestions.length > 0 && (
+                <div className="form-section suggestions-section">
+                    <div className="section-header">
+                        <h3>📊 Veri Setinden Eşleşen Kayıtlar (Triaj'dan)</h3>
+                        <span className="info-badge">Hemşire tarafından kaydedilen semptomlara göre</span>
+                    </div>
+                    <div className="suggestions-grid">
+                        {suggestions.map((suggestion, idx) => {
+                            const matchScore = suggestion.match_score || 0;
+                            const reasoning = suggestion.reasoning || 'Açıklama mevcut değil';
+
+                            return (
+                                <div key={idx} className="suggestion-card">
+                                    <div className="suggestion-header">
+                                        <div className="suggestion-rank">#{idx + 1}</div>
+                                        <div className="suggestion-score">Eşleşme: {matchScore}/{latestTriage?.nurseSymptomsCsv?.split(',').length || 0}</div>
+                                    </div>
+                                    <div className="suggestion-content">
+                                        <p className="suggestion-text">{reasoning}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
@@ -134,9 +173,10 @@ const DoctorNotes = () => {
                             name="plan"
                             value={form.plan}
                             onChange={handleChange}
-                            rows="3"
+                            rows="4"
                             placeholder="Tedavi planı"
                             required
+                            className="notes-textarea"
                         />
                     </div>
                     <div className="form-group">
@@ -145,8 +185,9 @@ const DoctorNotes = () => {
                             name="prescription"
                             value={form.prescription}
                             onChange={handleChange}
-                            rows="2"
+                            rows="3"
                             placeholder="İlaçlar ve dozajları"
+                            className="notes-textarea"
                         />
                     </div>
                     <div className="form-group">
@@ -155,8 +196,9 @@ const DoctorNotes = () => {
                             name="labOrders"
                             value={form.labOrders}
                             onChange={handleChange}
-                            rows="2"
+                            rows="3"
                             placeholder="Tetkik istekleri"
+                            className="notes-textarea"
                         />
                     </div>
                 </div>
@@ -191,8 +233,9 @@ const DoctorNotes = () => {
                             name="followUpNotes"
                             value={form.followUpNotes}
                             onChange={handleChange}
-                            rows="2"
+                            rows="3"
                             placeholder="Kontrol için notlar"
+                            className="notes-textarea"
                         />
                     </div>
                 </div>

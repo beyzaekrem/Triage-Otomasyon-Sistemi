@@ -34,3 +34,6 @@ logs/
 *.tmp
 *.temp
 
+
+mobil/build
+ mobil/.dart_tool

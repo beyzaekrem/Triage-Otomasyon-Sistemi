@@ -4,13 +4,18 @@ import { apiGet } from '../api';
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
 
     const fetchStats = async () => {
         try {
             const data = await apiGet('/appointments/dashboard');
             setStats(data);
+            setError(null);
+            setLastUpdated(new Date());
         } catch (err) {
             console.error('Dashboard yüklenemedi:', err);
+            setError(err.message || 'Veriler yüklenemedi');
         } finally {
             setLoading(false);
         }
@@ -23,19 +28,49 @@ const Dashboard = () => {
     }, []);
 
     if (loading) return <div className="loading"><div className="spinner"></div><p>Yükleniyor...</p></div>;
-    if (!stats) return <div className="error">Veriler yüklenemedi</div>;
+    if (error || !stats) {
+        return (
+            <div className="error-state">
+                <div className="error-icon">⚠️</div>
+                <p>{error?.message || error || 'Veriler yüklenemedi'}</p>
+                {error && (
+                    <div className="error-meta">
+                        {error.status && <span>HTTP {error.status}</span>}
+                        {error.requestId && <span>RequestId: {error.requestId}</span>}
+                        {error.timestamp && <span>{new Date(error.timestamp).toLocaleTimeString('tr-TR')}</span>}
+                    </div>
+                )}
+                <button onClick={fetchStats} className="btn-retry">Tekrar Dene</button>
+            </div>
+        );
+    }
 
-    const completionRate = stats.totalToday > 0 
+    const completionRate = stats.totalToday > 0
         ? Math.round((stats.done / stats.totalToday) * 100) : 0;
 
-    const maxTriage = stats.triageLevels 
+    const maxTriage = stats.triageLevels
         ? Math.max(...Object.values(stats.triageLevels), 1) : 1;
+
+    const formatTime = (date) => {
+        if (!date) return '—';
+        try {
+            return new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return '—';
+        }
+    };
 
     return (
         <div className="dashboard">
             <div className="dashboard-header">
                 <h1>📊 Dashboard</h1>
-                <p className="subtitle">Bugünkü acil servis özeti • Otomatik güncelleme aktif</p>
+                <div className="subtitle">
+                    <span>Bugünkü acil servis özeti • Otomatik güncelleme 30 sn</span>
+                    <div className="header-meta">
+                        <span className="badge">Son güncelleme: {formatTime(lastUpdated)}</span>
+                        <button className="btn-link" onClick={fetchStats}>Yenile</button>
+                    </div>
+                </div>
             </div>
 
             <div className="stats-grid">
@@ -92,6 +127,12 @@ const Dashboard = () => {
                             <span className="metric-value">%{completionRate}</span>
                         </div>
                         <div className="metric">
+                            <span>Son 1 saatte tamamlanan</span>
+                            <span className="metric-value">
+                                {stats.doneLastHour ?? 0}
+                            </span>
+                        </div>
+                        <div className="metric">
                             <span>Ortalama Bekleme</span>
                             <span className="metric-value">
                                 {stats.avgWaitTime ? `${Math.round(stats.avgWaitTime)} dk` : '—'}
@@ -123,7 +164,7 @@ const Dashboard = () => {
                             );
                         })}
                         {(!stats.triageLevels || Object.keys(stats.triageLevels).length === 0) && (
-                            <p className="no-data">Henüz triaj kaydı yok</p>
+                            <p className="no-data">ℹ️ Henüz triaj kaydı yok</p>
                         )}
                     </div>
                 </div>

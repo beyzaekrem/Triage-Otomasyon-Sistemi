@@ -9,7 +9,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
@@ -29,7 +28,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     @Transactional
-    public Appointment createAppointment(String patientTc, String chiefComplaint, Integer urgencySelfAssessment) {
+    public Appointment createAppointment(String patientTc, String chiefComplaint, String basicSymptomsCsv) {
         Patient patient = patientRepo.findByTc(patientTc)
                 .orElseThrow(() -> new NoSuchElementException("Hasta bulunamadı: " + patientTc));
 
@@ -42,8 +41,8 @@ public class AppointmentServiceImpl implements AppointmentService {
         ap.setAppointmentDate(LocalDate.now());
         ap.setStatus(AppointmentStatus.WAITING);
         ap.setChiefComplaint(chiefComplaint);
-        ap.setUrgencySelfAssessment(urgencySelfAssessment);
         ap.setEstimatedWaitMinutes(waitingCount * 15);
+        ap.setBasicSymptomsCsv(basicSymptomsCsv);
         ap.setCreatedAt(LocalDateTime.now());
 
         return appointmentRepo.save(ap);
@@ -106,6 +105,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         resp.setAppointments(appointmentRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
         resp.setTriageRecords(triageRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
         resp.setDoctorNotes(noteRepo.findAllByPatientTcOrderByCreatedAtDesc(tc));
+        resp.setUpdatedAt(java.time.LocalDateTime.now());
 
         return resp;
     }
@@ -144,14 +144,21 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
         stats.setAvgWaitTime(waitCount > 0 ? totalWait / waitCount : null);
 
+        stats.setDoneLastHour(
+                Math.toIntExact(
+                        appointmentRepo.countByStatusAndCompletedAtAfter(
+                                AppointmentStatus.DONE,
+                                java.time.LocalDateTime.now().minusHours(1)
+                        )
+                )
+        );
+
         return stats;
     }
 
     @Override
     public WaitingRoomDisplay getWaitingRoomDisplay() {
         WaitingRoomDisplay display = new WaitingRoomDisplay();
-        LocalDate today = LocalDate.now();
-
         List<Appointment> called = getTodayAppointmentsByStatus(AppointmentStatus.CALLED);
         if (!called.isEmpty()) {
             Appointment current = called.get(0);

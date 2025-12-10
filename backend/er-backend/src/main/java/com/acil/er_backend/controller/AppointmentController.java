@@ -31,15 +31,16 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<Appointment>> create(@RequestBody Map<String, Object> body) {
         String patientTc = (String) body.get("patientTc");
         String chiefComplaint = (String) body.get("chiefComplaint");
-        Integer urgencySelfAssessment = body.get("urgencySelfAssessment") != null
-                ? Integer.valueOf(body.get("urgencySelfAssessment").toString()) : null;
+        String basicSymptomsCsv = body.get("basicSymptomsCsv") != null
+                ? body.get("basicSymptomsCsv").toString()
+                : null;
 
         if (patientTc == null || patientTc.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("patientTc boş olamaz."));
         }
 
         try {
-            Appointment ap = appointmentService.createAppointment(patientTc, chiefComplaint, urgencySelfAssessment);
+            Appointment ap = appointmentService.createAppointment(patientTc, chiefComplaint, basicSymptomsCsv);
             return ResponseEntity.ok(ApiResponse.success("Randevu oluşturuldu.", ap));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));

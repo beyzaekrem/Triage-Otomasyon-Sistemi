@@ -23,13 +23,13 @@ const NavBar = () => {
             </div>
 
             <div className="navbar-links">
-                <Link to="/" style={isActive('/') ? {color: 'var(--primary)', background: 'var(--gray-100)'} : {}}>
+                <Link to="/" className={isActive('/') ? 'active' : ''}>
                     Dashboard
                 </Link>
-                <Link to="/appointments" style={isActive('/appointments') ? {color: 'var(--primary)', background: 'var(--gray-100)'} : {}}>
+                <Link to="/appointments" className={isActive('/appointments') ? 'active' : ''}>
                     Randevular
                 </Link>
-                <Link to="/patient-history" style={isActive('/patient-history') ? {color: 'var(--primary)', background: 'var(--gray-100)'} : {}}>
+                <Link to="/patient-history" className={isActive('/patient-history') ? 'active' : ''}>
                     Hasta Geçmişi
                 </Link>
                 <a href="/waiting-room" target="_blank" rel="noopener noreferrer">

@@ -14,6 +14,9 @@ const PatientHistory = () => {
     const [history, setHistory] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [sortDesc, setSortDesc] = useState(true);
+    const [showNotes, setShowNotes] = useState(true);
 
     const searchHistory = async () => {
         if (!tc.trim() || tc.length !== 11) {
@@ -43,6 +46,19 @@ const PatientHistory = () => {
 
     const getNotesForAppointment = (appointmentId) => {
         return history?.doctorNotes?.filter(n => n.appointment?.id === appointmentId) || [];
+    };
+
+    const filteredAppointments = () => {
+        if (!history?.appointments) return [];
+        const filtered = history.appointments.filter(ap => {
+            if (statusFilter === 'ALL') return true;
+            return (ap.status || '').toUpperCase() === statusFilter;
+        });
+        return filtered.sort((a, b) => {
+            const aDate = new Date(a.createdAt || 0);
+            const bDate = new Date(b.createdAt || 0);
+            return sortDesc ? bDate - aDate : aDate - bDate;
+        });
     };
 
     return (
@@ -98,10 +114,34 @@ const PatientHistory = () => {
 
                     <div className="timeline">
                         <h3>📅 Randevu Geçmişi</h3>
+                        <div className="history-filters">
+                            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                                <option value="ALL">Tümü</option>
+                                <option value="WAITING">Bekleyen</option>
+                                <option value="CALLED">Çağrılan</option>
+                                <option value="IN_PROGRESS">Muayenede</option>
+                                <option value="DONE">Tamamlanan</option>
+                                <option value="NO_SHOW">Gelmedi</option>
+                            </select>
+                            <button className="btn-link" onClick={() => setSortDesc(!sortDesc)}>
+                                Tarih: {sortDesc ? 'Yeni → Eski' : 'Eski → Yeni'}
+                            </button>
+                            <button className="btn-link" onClick={() => window.print()}>
+                                Yazdır / PDF
+                            </button>
+                            <label className="toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={showNotes}
+                                    onChange={(e) => setShowNotes(e.target.checked)}
+                                />
+                                <span>Doktor notlarını göster</span>
+                            </label>
+                        </div>
                         {history.appointments?.length === 0 ? (
                             <p className="no-data">Henüz randevu kaydı yok</p>
                         ) : (
-                            history.appointments.map(ap => (
+                            filteredAppointments().map(ap => (
                                 <div key={ap.id} className="timeline-item">
                                     <div className="timeline-header">
                                         <span className="date">
@@ -142,7 +182,7 @@ const PatientHistory = () => {
                                         </div>
                                     ))}
 
-                                    {getNotesForAppointment(ap.id).map(note => (
+                                    {showNotes && getNotesForAppointment(ap.id).map(note => (
                                         <div key={note.id} className="doctor-record">
                                             <h4>🩺 Doktor Notu</h4>
                                             <div className="diagnosis">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiGet, apiPost } from '../api';
 
@@ -11,6 +11,8 @@ const TriageForm = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [suggestions, setSuggestions] = useState([]);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
     const [form, setForm] = useState({
         temperature: '',
@@ -43,6 +45,54 @@ const TriageForm = () => {
         fetchData();
     }, [appointmentId]);
 
+    // Debounced suggestion fetch - sadece veri setinden eşleşen kayıtları getir
+    const fetchSuggestions = useCallback(async (symptomList) => {
+        if (symptomList.length === 0) {
+            setSuggestions([]);
+            return;
+        }
+        setLoadingSuggestions(true);
+        try {
+            const data = await apiPost('/medical/search', { symptoms: symptomList });
+            // En fazla 5 kayıt göster, eşleşme skoruna göre sırala
+            const results = Array.isArray(data) ? data : [];
+            // Eşleşme skoruna göre sırala ve ilk 5'i al
+            const scored = results.map(record => {
+                const recordSymptoms = Array.isArray(record.symptoms) ? record.symptoms : [];
+                const matchCount = symptomList.filter(s => 
+                    recordSymptoms.some(rs => rs.toLowerCase().trim() === s.toLowerCase().trim())
+                ).length;
+                return { ...record, match_score: matchCount };
+            }).sort((a, b) => {
+                // Önce eşleşme skoruna göre, sonra aciliyet seviyesine göre sırala
+                if (b.match_score !== a.match_score) {
+                    return b.match_score - a.match_score;
+                }
+                const urgA = a.urgency_level || 0;
+                const urgB = b.urgency_level || 0;
+                return urgB - urgA;
+            }).slice(0, 5);
+            
+            setSuggestions(scored);
+        } catch (err) {
+            console.error('Öneriler yüklenemedi:', err);
+            setSuggestions([]);
+        } finally {
+            setLoadingSuggestions(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (symptoms.length > 0) {
+                fetchSuggestions(symptoms);
+            } else {
+                setSuggestions([]);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [symptoms, fetchSuggestions]);
+
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
@@ -60,7 +110,7 @@ const TriageForm = () => {
 
     const filteredSymptoms = allSymptoms
         .filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
-        .slice(0, 10);
+        .slice(0, 15);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -93,7 +143,7 @@ const TriageForm = () => {
         }
     };
 
-    if (loading) return <div className="loading">Yükleniyor...</div>;
+    if (loading) return <div className="loading"><div className="spinner"></div><p>Yükleniyor...</p></div>;
 
     return (
         <div className="form-page">
@@ -156,33 +206,99 @@ const TriageForm = () => {
                 </div>
 
                 <div className="form-section">
-                    <h3>🔍 Semptomlar</h3>
-                    <div className="symptom-search">
-                        <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Semptom ara..."
-                        />
-                        {searchTerm && filteredSymptoms.length > 0 && (
-                            <div className="symptom-dropdown">
-                                {filteredSymptoms.map(s => (
-                                    <div key={s} className="symptom-option" onClick={() => addSymptom(s)}>
-                                        {s}
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="section-header">
+                        <h3>🔍 Semptomlar</h3>
+                        {symptoms.length > 0 && (
+                            <span className="symptom-count">{symptoms.length} semptom seçildi</span>
                         )}
                     </div>
-                    <div className="selected-symptoms">
-                        {symptoms.map(s => (
-                            <span key={s} className="symptom-tag">
-                                {s}
-                                <button type="button" onClick={() => removeSymptom(s)}>×</button>
-                            </span>
-                        ))}
+                    <div className="symptom-search-container">
+                        <div className="symptom-search-wrapper">
+                            <input
+                                type="text"
+                                className="symptom-search-input"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Semptom ara... (örn: baş ağrısı, ateş, öksürük)"
+                            />
+                            {searchTerm && filteredSymptoms.length > 0 && (
+                                <div className="symptom-dropdown">
+                                    {filteredSymptoms.map(s => (
+                                        <div 
+                                            key={s} 
+                                            className="symptom-option" 
+                                            onClick={() => addSymptom(s)}
+                                        >
+                                            <span className="symptom-icon">➕</span>
+                                            <span>{s}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {searchTerm && filteredSymptoms.length === 0 && (
+                                <div className="symptom-dropdown empty">
+                                    <div className="symptom-option disabled">Semptom bulunamadı</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
+                    {symptoms.length > 0 && (
+                        <div className="selected-symptoms-container">
+                            <div className="selected-symptoms-header">
+                                <span>Seçili Semptomlar</span>
+                                <button 
+                                    type="button" 
+                                    className="btn-clear-all"
+                                    onClick={() => setSymptoms([])}
+                                >
+                                    Tümünü Temizle
+                                </button>
+                            </div>
+                            <div className="selected-symptoms">
+                                {symptoms.map(s => (
+                                    <span key={s} className="symptom-tag">
+                                        <span className="symptom-text">{s}</span>
+                                        <button 
+                                            type="button" 
+                                            className="symptom-remove"
+                                            onClick={() => removeSymptom(s)}
+                                            aria-label="Kaldır"
+                                        >
+                                            ×
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
+
+                {suggestions.length > 0 && (
+                    <div className="form-section suggestions-section">
+                        <div className="section-header">
+                            <h3>📊 Veri Setinden Eşleşen Kayıtlar</h3>
+                            {loadingSuggestions && <span className="loading-badge">Aranıyor...</span>}
+                        </div>
+                        <div className="suggestions-grid">
+                            {suggestions.map((suggestion, idx) => {
+                                const matchScore = suggestion.match_score || 0;
+                                const reasoning = suggestion.reasoning || 'Açıklama mevcut değil';
+
+                                return (
+                                    <div key={idx} className="suggestion-card">
+                                        <div className="suggestion-header">
+                                            <div className="suggestion-rank">#{idx + 1}</div>
+                                            <div className="suggestion-score">Eşleşme: {matchScore}/{symptoms.length}</div>
+                                        </div>
+                                        <div className="suggestion-content">
+                                            <p className="suggestion-text">{reasoning}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 <div className="form-section">
                     <h3>🚦 Triaj Seviyesi</h3>
@@ -203,21 +319,30 @@ const TriageForm = () => {
                 </div>
 
                 <div className="form-section">
-                    <h3>📝 Notlar</h3>
-                    <textarea
-                        name="notes"
-                        value={form.notes}
-                        onChange={handleChange}
-                        rows="3"
-                        placeholder="Ek notlar..."
-                    />
+                    <div className="section-header">
+                        <h3>📝 Ek Notlar</h3>
+                        <span className="notes-hint">Hastanın durumu, gözlemler ve özel notlar</span>
+                    </div>
+                    <div className="notes-container">
+                        <textarea
+                            name="notes"
+                            value={form.notes}
+                            onChange={handleChange}
+                            rows="5"
+                            placeholder="Hastanın genel durumu, gözlemler, özel notlar, aile öyküsü vb. bilgileri buraya yazabilirsiniz..."
+                            className="notes-textarea"
+                        />
+                        <div className="notes-footer">
+                            <span className="char-count">{form.notes.length} karakter</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="form-actions">
                     <button type="button" onClick={() => navigate('/appointments')} className="btn-cancel">
                         İptal
                     </button>
-                    <button type="submit" className="btn-submit" disabled={submitting}>
+                    <button type="submit" className="btn-submit" disabled={submitting || symptoms.length === 0}>
                         {submitting ? 'Kaydediliyor...' : 'Kaydet'}
                     </button>
                 </div>

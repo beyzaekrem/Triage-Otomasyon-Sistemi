@@ -24,8 +24,10 @@ public class Appointment {
     private AppointmentStatus status = AppointmentStatus.WAITING;
 
     private String chiefComplaint;
-    private Integer urgencySelfAssessment;
     private Integer estimatedWaitMinutes;
+
+    @Column(length = 4096)
+    private String basicSymptomsCsv;
 
     private LocalDateTime createdAt;
     private LocalDateTime calledAt;
@@ -57,10 +59,10 @@ public class Appointment {
     public void setStatus(AppointmentStatus status) { this.status = status; }
     public String getChiefComplaint() { return chiefComplaint; }
     public void setChiefComplaint(String chiefComplaint) { this.chiefComplaint = chiefComplaint; }
-    public Integer getUrgencySelfAssessment() { return urgencySelfAssessment; }
-    public void setUrgencySelfAssessment(Integer urgencySelfAssessment) { this.urgencySelfAssessment = urgencySelfAssessment; }
     public Integer getEstimatedWaitMinutes() { return estimatedWaitMinutes; }
     public void setEstimatedWaitMinutes(Integer estimatedWaitMinutes) { this.estimatedWaitMinutes = estimatedWaitMinutes; }
+    public String getBasicSymptomsCsv() { return basicSymptomsCsv; }
+    public void setBasicSymptomsCsv(String basicSymptomsCsv) { this.basicSymptomsCsv = basicSymptomsCsv; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getCalledAt() { return calledAt; }

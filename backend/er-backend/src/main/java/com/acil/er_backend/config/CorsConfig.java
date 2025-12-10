@@ -12,13 +12,17 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${app.cors.origins:http://localhost:5173,http://localhost:3000}")
+    @Value("${app.cors.origins:http://localhost:5173,http://localhost:3000,http://localhost:8081}")
     private String allowedOrigins;
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        // Support exact hosts and pattern-based localhost entries (e.g. http://localhost:1234)
+        config.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
