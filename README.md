@@ -1,356 +1,356 @@
-# 🏥 Hastane Acil Servis Yönetim Sistemi
+# 🏥 Hospital Emergency Room Management System
 
-Modern ve kullanıcı dostu bir hastane acil servis yönetim sistemi. Backend (Spring Boot), Frontend (React) ve Mobil (Flutter) uygulamalarından oluşan tam kapsamlı bir sistem.
+A modern and user-friendly hospital emergency room management system. A comprehensive full-stack system consisting of Backend (Spring Boot), Frontend (React), and Mobile (Flutter) applications.
 
-## 📋 Özellikler
+## 📋 Features
 
-### Hasta Yönetimi
-- TC kimlik no ile hasta kaydı
-- Hasta geçmişi görüntüleme
-- Randevu oluşturma
+### Patient Management
+- Patient registration with Turkish ID number
+- Patient history viewing
+- Appointment creation
 
-### Triaj Sistemi
-- AI destekli semptom analizi
-- Vital bulgu kaydı
-- Triaj seviyesi belirleme (Kırmızı/Sarı/Yeşil)
-- Mobil uygulama üzerinden hasta triaj kaydı
+### Triage System
+- AI-assisted symptom analysis
+- Vital signs recording
+- Triage level determination (Red/Yellow/Green)
+- Patient triage registration via mobile application
 
-### Doktor Modülü
-- Muayene ve tanı girişi
-- Reçete yazma
-- Laboratuvar istemi
-- Sevk işlemleri
+### Doctor Module
+- Examination and diagnosis entry
+- Prescription writing
+- Laboratory requests
+- Referral procedures
 
-### Bekleme Odası Ekranı
-- Gerçek zamanlı sıra takibi
-- Çağrılan hasta gösterimi
-- Otomatik güncelleme
+### Waiting Room Screen
+- Real-time queue tracking
+- Called patient display
+- Automatic updates
 
 ### Dashboard
-- Günlük istatistikler
-- Triaj dağılımı
-- Ortalama bekleme süresi
+- Daily statistics
+- Triage distribution
+- Average waiting time
 
-## 🚀 Kurulum
+## 🚀 Installation
 
-### Gereksinimler
+### Requirements
 
 **Backend:**
-- Java 17 veya üzeri
-- PostgreSQL 14 veya üzeri
-- Gradle (wrapper ile birlikte gelir)
+- Java 17 or higher
+- PostgreSQL 14 or higher
+- Gradle (included with wrapper)
 
 **Frontend:**
-- Node.js 18 veya üzeri
-- npm veya yarn
+- Node.js 18 or higher
+- npm or yarn
 
-**Mobil:**
-- Flutter SDK 3.3.0 veya üzeri
+**Mobile:**
+- Flutter SDK 3.3.0 or higher
 - Dart SDK
-- Android Studio (Android geliştirme için)
-- Xcode (iOS geliştirme için, sadece macOS)
+- Android Studio (for Android development)
+- Xcode (for iOS development, macOS only)
 
-### 1. Projeyi Klonlama
+### 1. Clone the Project
 
 ```bash
-git clone <repository-url>
-cd hospital_er
+git clone https://github.com/MertP06/Triage-Otomasyon-Sistemi.git
+cd Triage-Otomasyon-Sistemi
 ```
 
-### 2. Veritabanı Kurulumu
+### 2. Database Setup
 
-PostgreSQL'de veritabanı oluşturun:
+Create a database in PostgreSQL:
 
 ```sql
 CREATE DATABASE hospital_er;
 ```
 
-**Varsayılan Bağlantı Bilgileri:**
+**Default Connection Settings:**
 - Host: `localhost:5432`
 - Database: `hospital_er`
 - Username: `postgres`
 - Password: `1234`
 
-> **Not:** Veritabanı bağlantı bilgilerini `backend/er-backend/src/main/resources/application.properties` dosyasından değiştirebilirsiniz.
+> **Note:** You can change the database connection settings in `backend/er-backend/src/main/resources/application.properties`.
 
-### 3. Backend Kurulumu ve Çalıştırma
+### 3. Backend Installation and Running
 
 ```bash
 cd backend/er-backend
 
-# Windows için
+# For Windows
 gradlew.bat bootRun
 
-# Linux/Mac için
+# For Linux/Mac
 ./gradlew bootRun
 ```
 
-**Alternatif (IntelliJ IDEA):**
-1. Projeyi IntelliJ IDEA'da açın
-2. `ErBackendApplication.java` dosyasını bulun
-3. Sağ tıklayıp `Run 'ErBackendApplication'` seçeneğini seçin
+**Alternative (IntelliJ IDEA):**
+1. Open the project in IntelliJ IDEA
+2. Find `ErBackendApplication.java`
+3. Right-click and select `Run 'ErBackendApplication'`
 
-**Backend Varsayılan Port:** `8080`  
+**Backend Default Port:** `8080` 
 **API Base URL:** `http://localhost:8080/api`
 
-### 4. Frontend Kurulumu ve Çalıştırma
+### 4. Frontend Installation and Running
 
 ```bash
 cd frontend
 
-# Bağımlılıkları yükle
+# Install dependencies
 npm install
 
-# Geliştirme sunucusunu başlat
+# Start development server
 npm run dev
 ```
 
-**Frontend Varsayılan Port:** `5173`  
+**Frontend Default Port:** `5173` 
 **URL:** `http://localhost:5173`
 
-> **Not:** API adresini değiştirmek için `frontend/.env` dosyası oluşturun ve `VITE_API_BASE=http://localhost:8080/api` ekleyin.
+> **Note:** To change the API address, create a `frontend/.env` file and add `VITE_API_BASE=http://localhost:8080/api`.
 
-### 5. Mobil Uygulama (Flutter) Kurulumu ve Çalıştırma
+### 5. Mobile Application (Flutter) Installation and Running
 
-#### Flutter SDK Kurulumu
+#### Flutter SDK Installation
 
-Flutter SDK'nın kurulu olduğundan emin olun:
+Make sure Flutter SDK is installed:
 
 ```bash
 flutter --version
 ```
 
-Kurulu değilse: [Flutter Kurulum Rehberi](https://docs.flutter.dev/get-started/install)
+If not installed: [Flutter Installation Guide](https://docs.flutter.dev/get-started/install)
 
-#### Bağımlılıkları Yükleme
+#### Install Dependencies
 
 ```bash
 cd mobil
 flutter pub get
 ```
 
-#### Uygulamayı Çalıştırma
+#### Run the Application
 
-**Web (Chrome) için:**
+**For Web (Chrome):**
 ```bash
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080/api
 ```
 
-**Android Emulator için:**
+**For Android Emulator:**
 ```bash
-# Önce bir Android emulator başlatın, sonra:
+# First start an Android emulator, then:
 flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8080/api
 ```
 
-**iOS Simulator için (sadece macOS):**
+**For iOS Simulator (macOS only):**
 ```bash
-# Önce bir iOS simulator başlatın, sonra:
+# First start an iOS simulator, then:
 flutter run -d ios --dart-define=API_BASE_URL=http://localhost:8080/api
 ```
 
-**Fiziksel Cihaz için:**
-- Android: Bilgisayarınızın IP adresini kullanın (örn: `http://192.168.1.100:8080/api`)
-- iOS: Bilgisayarınızın IP adresini kullanın
+**For Physical Device:**
+- Android: Use your computer's IP address (e.g., `http://192.168.1.100:8080/api`)
+- iOS: Use your computer's IP address
 
-#### API Adresi Notları
+#### API Address Notes
 
 | Platform | API Base URL |
 |----------|-------------|
 | Web (Chrome) | `http://localhost:8080/api` |
 | Android Emulator | `http://10.0.2.2:8080/api` |
 | iOS Simulator | `http://localhost:8080/api` |
-| Fiziksel Cihaz | `http://[BILGISAYAR_IP]:8080/api` |
+| Physical Device | `http://[COMPUTER_IP]:8080/api` |
 
-> **Önemli:** Backend'in çalıştığından emin olun. Mobil uygulama backend'e bağlanamazsa hata verecektir.
+> **Important:** Make sure the backend is running. The mobile app will show errors if it cannot connect to the backend.
 
-## 🔑 Giriş Bilgileri
+## 🔑 Login Credentials
 
-### Web Uygulaması (Frontend)
+### Web Application (Frontend)
 
-| Rol | Kullanıcı Adı | Şifre |
-|-----|---------------|-------|
-| Triyaj Sorumlusu | `triyaj` | `triyaj123` |
-| Doktor | `doctor` | `doctor123` |
+| Role | Username | Password |
+|-----|----------|----------|
+| Triage Supervisor | `triyaj` | `triyaj123` |
+| Doctor | `doctor` | `doctor123` |
 
-### Mobil Uygulama
+### Mobile Application
 
-**İlk Kullanım:**
-1. Uygulamayı açın
-2. "Hasta Kaydı" seçeneğini seçin
-3. TC Kimlik No, İsim, Doğum Yılı ve Cinsiyet bilgilerini girin
-4. Kayıt oluşturun
+**First Use:**
+1. Open the app
+2. Select "Patient Registration"
+3. Enter Turkish ID Number, Name, Birth Year, and Gender
+4. Create registration
 
-**Sonraki Girişler:**
-1. "Hasta Girişi" seçeneğini seçin
-2. TC Kimlik No ve İsim ile giriş yapın
+**Subsequent Logins:**
+1. Select "Patient Login"
+2. Login with Turkish ID Number and Name
 
 ## 📡 API Endpoints
 
-### Hastalar
-- `GET /api/patients` - Tüm hastaları listele
-- `POST /api/patients` - Yeni hasta oluştur
-- `GET /api/patients/{tc}` - TC kimlik no ile hasta detayı
+### Patients
+- `GET /api/patients` - List all patients
+- `POST /api/patients` - Create new patient
+- `GET /api/patients/{tc}` - Get patient details by Turkish ID
 
-### Mobil Hasta İşlemleri
-- `POST /api/mobile/patient/register` - Mobil hasta kaydı
-- `POST /api/mobile/patient/login` - Mobil hasta girişi
+### Mobile Patient Operations
+- `POST /api/mobile/patient/register` - Mobile patient registration
+- `POST /api/mobile/patient/login` - Mobile patient login
 
-### Randevular
-- `GET /api/appointments` - Günün randevularını listele
-- `POST /api/appointments` - Yeni randevu oluştur
-- `PATCH /api/appointments/{id}/status` - Randevu durumunu güncelle
-- `GET /api/appointments/history/{tc}` - Hasta geçmişi
-- `GET /api/appointments/dashboard` - Dashboard istatistikleri
-- `GET /api/appointments/waiting-room` - Bekleme odası listesi
-- `GET /api/appointments/mobile/queue/{tc}` - Mobil sıra durumu sorgulama
+### Appointments
+- `GET /api/appointments` - List today's appointments
+- `POST /api/appointments` - Create new appointment
+- `PATCH /api/appointments/{id}/status` - Update appointment status
+- `GET /api/appointments/history/{tc}` - Patient history
+- `GET /api/appointments/dashboard` - Dashboard statistics
+- `GET /api/appointments/waiting-room` - Waiting room list
+- `GET /api/appointments/mobile/queue/{tc}` - Mobile queue status query
 
-### Triaj
-- `POST /api/triage` - Triaj kaydı oluştur (Web)
-- `POST /api/mobile/triage` - Mobil triaj kaydı (otomatik randevu oluşturur)
-- `GET /api/triage/by-appointment/{id}` - Randevuya göre triaj kayıtları
+### Triage
+- `POST /api/triage` - Create triage record (Web)
+- `POST /api/mobile/triage` - Mobile triage record (automatically creates appointment)
+- `GET /api/triage/by-appointment/{id}` - Get triage records by appointment
 
-### Doktor Notları
-- `POST /api/doctor-notes` - Doktor notu oluştur
-- `GET /api/doctor-notes/by-appointment/{id}` - Randevuya göre doktor notları
+### Doctor Notes
+- `POST /api/doctor-notes` - Create doctor note
+- `GET /api/doctor-notes/by-appointment/{id}` - Get doctor notes by appointment
 
-## 🛠 Teknolojiler
+## 🛠 Technologies
 
 ### Backend
 - **Spring Boot 3.2** - Java framework
-- **Spring Security** - Güvenlik ve kimlik doğrulama
-- **Spring Data JPA** - Veritabanı erişimi
-- **PostgreSQL** - İlişkisel veritabanı
+- **Spring Security** - Security and authentication
+- **Spring Data JPA** - Database access
+- **PostgreSQL** - Relational database
 - **Gradle** - Build tool
 
 ### Frontend
-- **React 18** - UI kütüphanesi
-- **React Router** - Sayfa yönlendirme
-- **Vite** - Build tool ve dev server
+- **React 18** - UI library
+- **React Router** - Page routing
+- **Vite** - Build tool and dev server
 - **Axios** - HTTP client
 
-### Mobil
+### Mobile
 - **Flutter 3.3+** - Cross-platform framework
-- **Dart** - Programlama dili
+- **Dart** - Programming language
 - **Dio** - HTTP client
-- **Shared Preferences** - Yerel veri depolama
+- **Shared Preferences** - Local data storage
 
-## 📱 Mobil Uygulama Detayları
+## 📱 Mobile Application Details
 
-### Özellikler
-- ✅ Hasta kayıt/giriş sistemi (TC + İsim)
-- ✅ Kategorize edilmiş semptom seçimi
-- ✅ Semptom arama özelliği
-- ✅ Otomatik triaj seviyesi belirleme
-- ✅ Gerçek zamanlı kuyruk durumu sorgulama
-- ✅ Aciliyet seviyesi görsel gösterimi (Kırmızı/Sarı/Yeşil)
-- ✅ Modern Material Design 3 arayüz
-- ✅ T.C. Kimlik No validasyonu
-- ✅ Form validasyonları
+### Features
+- ✅ Patient registration/login system (Turkish ID + Name)
+- ✅ Categorized symptom selection
+- ✅ Symptom search feature
+- ✅ Automatic triage level determination
+- ✅ Real-time queue status query
+- ✅ Visual urgency level display (Red/Yellow/Green)
+- ✅ Modern Material Design 3 interface
+- ✅ Turkish ID Number validation
+- ✅ Form validations
 
-### Proje Yapısı
+### Project Structure
 
 ```
 mobil/
 ├── lib/
-│   ├── constants/          # Sabitler (renkler, stringler)
-│   ├── models/             # Veri modelleri
-│   ├── pages/              # UI sayfaları
-│   ├── services/           # API ve depolama servisleri
-│   └── utils/              # Yardımcı fonksiyonlar
-├── assets/                 # JSON veri dosyaları
-└── pubspec.yaml           # Bağımlılıklar
+│ ├── constants/ # Constants (colors, strings)
+│ ├── models/ # Data models
+│ ├── pages/ # UI pages
+│ ├── services/ # API and storage services
+│ └── utils/ # Helper functions
+├── assets/ # JSON data files
+└── pubspec.yaml # Dependencies
 ```
 
-### Hızlı Başlangıç Senaryosu
+### Quick Start Scenario
 
-1. **Backend'i başlatın:**
-   ```bash
-   cd backend/er-backend
-   ./gradlew bootRun
-   ```
+1. **Start the backend:**
+ ```bash
+ cd backend/er-backend
+ ./gradlew bootRun
+ ```
 
-2. **Mobil uygulamayı başlatın:**
-   ```bash
-   cd mobil
-   flutter pub get
-   flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080/api
-   ```
+2. **Start the mobile app:**
+ ```bash
+ cd mobil
+ flutter pub get
+ flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080/api
+ ```
 
-3. **Test akışı:**
-   - Hasta kaydı oluşturun (TC, İsim, Doğum Yılı, Cinsiyet)
-   - Semptom seçin ve triaj kaydı oluşturun
-   - Aciliyet seviyesi ve sıra numarasını görüntüleyin
-   - Kuyruk durumunu güncelleyin
+3. **Test flow:**
+ - Create patient registration (Turkish ID, Name, Birth Year, Gender)
+ - Select symptoms and create triage record
+ - View urgency level and queue number
+ - Update queue status
 
-## 📁 Proje Yapısı
+## 📁 Project Structure
 
 ```
 hospital_er/
 ├── backend/
-│   └── er-backend/         # Spring Boot backend
-├── frontend/               # React frontend
-├── mobil/                  # Flutter mobil uygulama
-└── dataset/                # Örnek veri dosyaları
+│ └── er-backend/ # Spring Boot backend
+├── frontend/ # React frontend
+├── mobil/ # Flutter mobile application
+└── dataset/ # Sample data files
 ```
 
-## 🧪 Test
+## 🧪 Testing
 
-### Backend Test
+### Backend Tests
 ```bash
 cd backend/er-backend
 ./gradlew test
 ```
 
-### Frontend Test
+### Frontend Tests
 ```bash
 cd frontend
 npm test
 ```
 
-### Flutter Test
+### Flutter Tests
 ```bash
 cd mobil
 flutter test
 ```
 
-## 🐛 Sorun Giderme
+## 🐛 Troubleshooting
 
-### Backend başlamıyor
-- PostgreSQL servisinin çalıştığından emin olun
-- Veritabanı bağlantı bilgilerini kontrol edin
-- Port 8080'in kullanılabilir olduğundan emin olun
+### Backend won't start
+- Make sure PostgreSQL service is running
+- Check database connection settings
+- Ensure port 8080 is available
 
-### Frontend API'ye bağlanamıyor
-- Backend'in çalıştığından emin olun
-- `.env` dosyasında `VITE_API_BASE` değerini kontrol edin
-- CORS ayarlarını kontrol edin
+### Frontend can't connect to API
+- Make sure backend is running
+- Check `VITE_API_BASE` value in `.env` file
+- Check CORS settings
 
-### Flutter uygulaması çalışmıyor
-- Flutter SDK'nın kurulu olduğundan emin olun: `flutter doctor`
-- Bağımlılıkları yükleyin: `flutter pub get`
-- API adresinin doğru olduğundan emin olun (platforma göre değişir)
-- Backend'in çalıştığından emin olun
+### Flutter app won't run
+- Make sure Flutter SDK is installed: `flutter doctor`
+- Install dependencies: `flutter pub get`
+- Make sure API address is correct (varies by platform)
+- Make sure backend is running
 
-### Android Emulator API bağlantı sorunu
-- Android emulator için `10.0.2.2` adresini kullanın
-- Emulator'ün internet bağlantısı olduğundan emin olun
+### Android Emulator API connection issue
+- Use `10.0.2.2` address for Android emulator
+- Make sure emulator has internet connection
 
-## 🤝 Katkıda Bulunma
+## 🤝 Contributing
 
-1. Bu repository'yi fork edin
-2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
-3. Değişikliklerinizi commit edin (`git commit -m 'Add amazing feature'`)
-4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
-5. Pull Request oluşturun
+1. Fork this repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📝 Lisans
+## 📝 License
 
-Bu proje MIT lisansı altında lisanslanmıştır.
+This project is licensed under the MIT License.
 
-## 👥 Geliştiriciler
+## 👥 Developers
 
-Bu proje eğitim amaçlı geliştirilmiştir.
+This project was developed for educational purposes.
 
 ---
 
-**Not:** Bu sistem demo amaçlıdır ve gerçek tıbbi kararlar için kullanılmamalıdır.
+**Note:** This system is for demonstration purposes and should not be used for real medical decisions.
