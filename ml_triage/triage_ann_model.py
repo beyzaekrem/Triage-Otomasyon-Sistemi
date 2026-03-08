@@ -54,14 +54,15 @@ with open(json_path, "r", encoding="utf-8") as f:
 print(f"\nToplam kayit sayisi: {len(data)}")
 
 # ============================================================
-# 2. SINIF ESLEMESI
+# 2. SINIF ESLEMESI (urgency_label bazli)
 # ============================================================
-def map_triage_class(urgency_level):
-    if urgency_level == 1:
+def map_triage_class(urgency_label):
+    label = urgency_label.upper().strip()
+    if label == "NORMAL":
         return "Yesil"
-    elif urgency_level in [2, 3]:
+    elif label in ["ACIL", "AC\u0130L", "AC\u0130l"]:
         return "Sari"
-    elif urgency_level in [4, 5]:
+    elif label in ["\u00c7OK ACIL", "\u00c7OK AC\u0130L"]:
         return "Kirmizi"
     else:
         return None
@@ -80,7 +81,7 @@ print(f"Benzersiz semptom sayisi: {len(all_symptoms)}")
 rows = []
 labels = []
 for record in data:
-    triage = map_triage_class(record["urgency_level"])
+    triage = map_triage_class(record["urgency_label"])
     if triage is None:
         continue
     record_symptoms = set(s.strip().lower() for s in record.get("symptoms", []))
