@@ -12,6 +12,7 @@ class Patient {
   final String? statusMessage;
   final int? birthYear;
   final String? gender; // E / K
+  final String? colorCode;
 
   Patient({
     required this.fullName,
@@ -27,6 +28,7 @@ class Patient {
     this.statusMessage,
     this.birthYear,
     this.gender,
+    this.colorCode,
   });
 
   /// Create a copy with updated fields
@@ -44,6 +46,7 @@ class Patient {
     String? statusMessage,
     int? birthYear,
     String? gender,
+    String? colorCode,
   }) {
     return Patient(
       fullName: fullName ?? this.fullName,
@@ -59,6 +62,7 @@ class Patient {
       statusMessage: statusMessage ?? this.statusMessage,
       birthYear: birthYear ?? this.birthYear,
       gender: gender ?? this.gender,
+      colorCode: colorCode ?? this.colorCode,
     );
   }
 
@@ -76,6 +80,7 @@ class Patient {
         "statusMessage": statusMessage,
         "birthYear": birthYear,
         "gender": gender,
+        "colorCode": colorCode,
       };
 
   factory Patient.fromJson(Map<String, dynamic> j) {
@@ -109,6 +114,7 @@ class Patient {
       statusMessage: j["statusMessage"] as String?,
       birthYear: j["birthYear"] as int?,
       gender: j["gender"] as String?,
+      colorCode: j["colorCode"] as String?,
       );
   }
 

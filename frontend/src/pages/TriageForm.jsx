@@ -37,6 +37,10 @@ const TriageForm = () => {
                 ]);
                 setAppointment(detail);
                 setAllSymptoms(Array.isArray(syms) ? syms : Object.values(syms));
+                
+                if (detail && detail.appointment && detail.appointment.currentTriageColor) {
+                    setForm(prev => ({ ...prev, triageLevel: detail.appointment.currentTriageColor }));
+                }
             } catch (err) {
                 toast.error('Veriler yüklenemedi: ' + err.message);
             } finally {
@@ -133,10 +137,22 @@ const TriageForm = () => {
             <div className="form-header">
                 <h1>📋 Triaj Formu</h1>
                 {appointment?.patient && (
-                    <div className="patient-banner">
+                    <div className="patient-banner" style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center' }}>
                         <span className="queue">#{appointment.appointment?.queueNumber}</span>
                         <span className="name">{appointment.patient.name}</span>
                         <span className="tc">TC: {appointment.patient.tc}</span>
+                        {appointment.appointment?.currentTriageColor && (
+                            <span style={{
+                                padding: '6px 14px', 
+                                borderRadius: '20px', 
+                                backgroundColor: appointment.appointment.currentTriageColor === 'KIRMIZI' ? '#fff1f0' : appointment.appointment.currentTriageColor === 'SARI' ? '#fffbe6' : '#f6ffed', 
+                                color: appointment.appointment.currentTriageColor === 'KIRMIZI' ? '#cf1322' : appointment.appointment.currentTriageColor === 'SARI' ? '#d48806' : '#389e0d', 
+                                border: `1px solid ${appointment.appointment.currentTriageColor === 'KIRMIZI' ? '#ffa39e' : appointment.appointment.currentTriageColor === 'SARI' ? '#ffe58f' : '#b7eb8f'}`, 
+                                fontWeight: 'bold'
+                            }}>
+                                📌 Mevcut Durum: {appointment.appointment.currentTriageColor}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>
@@ -257,24 +273,45 @@ const TriageForm = () => {
                 </div>
 
                 {suggestions.length > 0 && (
-                    <div className="form-section suggestions-section">
+                    <div className="form-section suggestions-section" style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '12px' }}>
                         <div className="section-header">
-                            <h3>📊 Veri Setinden Eşleşen Kayıtlar</h3>
+                            <h3 style={{ color: '#1d39c4' }}>🤖 Yapay Zeka (AI) Önerisi</h3>
                             {loadingSuggestions && <span className="loading-badge">Aranıyor...</span>}
                         </div>
                         <div className="suggestions-grid">
                             {suggestions.map((suggestion, idx) => {
-                                const matchScore = suggestion.match_score || 0;
-                                const reasoning = suggestion.reasoning || 'Açıklama mevcut değil';
+                                const mlColor = suggestion.color || 'YESIL';
+                                const confidence = suggestion.confidence || 0;
+                                const explanation = suggestion.explanation || 'Açıklama mevcut değil';
+                                
+                                const colorStyles = {
+                                    KIRMIZI: { bg: '#ff4d4f', text: 'white' },
+                                    SARI: { bg: '#faad14', text: 'white' },
+                                    YESIL: { bg: '#52c41a', text: 'white' }
+                                };
+                                const style = colorStyles[mlColor] || colorStyles.YESIL;
 
                                 return (
-                                    <div key={idx} className="suggestion-card">
-                                        <div className="suggestion-header">
-                                            <div className="suggestion-rank">#{idx + 1}</div>
-                                            <div className="suggestion-score">Eşleşme: {matchScore}/{symptoms.length}</div>
+                                    <div key={idx} className="suggestion-card" style={{ borderLeft: `6px solid ${style.bg}` }}>
+                                        <div className="suggestion-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <span style={{ backgroundColor: style.bg, color: style.text, padding: '5px 12px', borderRadius: '6px', fontWeight: 'bold' }}>
+                                                    {mlColor} KOD
+                                                </span>
+                                                <span style={{ fontWeight: '500', color: '#595959' }}>%{confidence} Güven</span>
+                                            </div>
+                                            {form.triageLevel !== mlColor && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setForm(prev => ({ ...prev, triageLevel: mlColor }))}
+                                                    style={{ backgroundColor: '#1890ff', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                                                >
+                                                    Seviyeyi Uygula
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="suggestion-content">
-                                            <p className="suggestion-text">{reasoning}</p>
+                                            <p className="suggestion-text" style={{ fontStyle: 'italic', color: '#434343' }}>{explanation}</p>
                                         </div>
                                     </div>
                                 );

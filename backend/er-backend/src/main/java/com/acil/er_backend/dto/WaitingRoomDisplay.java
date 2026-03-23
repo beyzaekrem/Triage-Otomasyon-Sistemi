@@ -21,6 +21,7 @@ public class WaitingRoomDisplay {
         private Integer queueNumber;
         private String patientName;
         private String message;
+        private String colorCode;
     }
 
     @Getter
@@ -31,5 +32,6 @@ public class WaitingRoomDisplay {
         private Integer queueNumber;
         private String status;
         private int aheadCount;
+        private String colorCode;
     }
 }

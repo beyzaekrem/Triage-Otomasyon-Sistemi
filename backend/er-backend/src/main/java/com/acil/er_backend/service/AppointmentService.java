@@ -42,5 +42,6 @@ public interface AppointmentService {
         private Integer estimatedWaitMinutes;
         private String patientName;
         private String message;
+        private String colorCode;
     }
 }

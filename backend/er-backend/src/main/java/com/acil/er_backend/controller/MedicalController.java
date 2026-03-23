@@ -26,17 +26,17 @@ public class MedicalController {
 
     @PostMapping("/search")
     public List<Map<String, Object>> search(@RequestBody Map<String, Object> body) {
-        return inferenceService.suggestTop5(extractSymptoms(body));
+        return List.of(inferenceService.inferTriage(extractSymptoms(body)));
     }
 
     @PostMapping("/suggest")
     public List<Map<String, Object>> suggest(@RequestBody Map<String, Object> body) {
-        return inferenceService.suggestTop5(extractSymptoms(body));
+        return List.of(inferenceService.inferTriage(extractSymptoms(body)));
     }
 
     @PostMapping("/infer")
     public List<Map<String, Object>> infer(@RequestBody Map<String, Object> body) {
-        return inferenceService.suggestTop5(extractSymptoms(body));
+        return List.of(inferenceService.inferTriage(extractSymptoms(body)));
     }
 
     private List<String> extractSymptoms(Map<String, Object> body) {

@@ -6,6 +6,7 @@ class QueueStatus {
   final int? waitingAhead;
   final String? message;
   final String? patientName;
+  final String? colorCode;
 
   const QueueStatus({
     this.queueNumber,
@@ -15,6 +16,7 @@ class QueueStatus {
     this.waitingAhead,
     this.message,
     this.patientName,
+    this.colorCode,
   });
 
   factory QueueStatus.fromJson(Map<String, dynamic> json) => QueueStatus(
@@ -26,6 +28,7 @@ class QueueStatus {
         waitingAhead: _asInt(json['waitingAhead'] ?? json['waiting_ahead']),
         message: json['message']?.toString(),
         patientName: json['patientName']?.toString(),
+        colorCode: json['colorCode']?.toString(),
       );
 
   static int? _asInt(dynamic v) {

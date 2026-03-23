@@ -1,57 +1,93 @@
 package com.acil.er_backend.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class MedicalInferenceService {
 
-    private final MedicalDataService medicalDataService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public MedicalInferenceService(MedicalDataService medicalDataService) {
-        this.medicalDataService = medicalDataService;
-    }
-
-    public List<Map<String, Object>> suggestTop5(List<String> symptoms) {
-        if (symptoms == null || symptoms.isEmpty()) return List.of();
-
-        List<Map<String, Object>> matches = medicalDataService.searchBySymptoms(symptoms);
-
-        List<Map<String, Object>> scored = new ArrayList<>();
-        for (Map<String, Object> rec : matches) {
-            Object symptomsObj = rec.get("symptoms");
-            int matchCount = 0;
-            if (symptomsObj instanceof List<?> list) {
-                for (Object s : list) {
-                    if (s != null) {
-                        String lower = s.toString().toLowerCase().trim();
-                        for (String input : symptoms) {
-                            if (lower.equals(input.toLowerCase().trim())) {
-                                matchCount++;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            Map<String, Object> copy = new HashMap<>(rec);
-            copy.put("match_score", matchCount);
-            scored.add(copy);
+    public Map<String, Object> inferTriage(List<String> symptoms) {
+        if (symptoms == null || symptoms.isEmpty()) {
+            return fallback("YESIL", 100, "Hiçbir semptom belirtilmediği için YESIL olarak atandı.");
         }
 
-        return scored.stream()
-                .sorted((a, b) -> {
-                    int scoreA = (int) a.getOrDefault("match_score", 0);
-                    int scoreB = (int) b.getOrDefault("match_score", 0);
-                    if (scoreB != scoreA) return scoreB - scoreA;
-                    Object uA = a.get("urgency_level");
-                    Object uB = b.get("urgency_level");
-                    int urgA = uA != null ? Integer.parseInt(uA.toString()) : 0;
-                    int urgB = uB != null ? Integer.parseInt(uB.toString()) : 0;
-                    return urgB - urgA;
-                })
-                .limit(5)
-                .collect(Collectors.toList());
+        try {
+            String symptomsCsv = String.join(", ", symptoms);
+
+            // Robustly find the python script
+            Path pythonScriptPath = null;
+            Path current = Paths.get(System.getProperty("user.dir")).toAbsolutePath();
+            while (current != null) {
+                Path candidate = current.resolve("ml_triage").resolve("triage_inference.py");
+                if (java.nio.file.Files.exists(candidate)) {
+                    pythonScriptPath = candidate;
+                    break;
+                }
+                current = current.getParent();
+            }
+
+            if (pythonScriptPath == null) {
+                log.error("Could not find triage_inference.py in any parent directory.");
+                return fallback("SARI", 50, "Python yapay zeka betiği bulunamadı.");
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(
+                    "python",
+                    pythonScriptPath.toAbsolutePath().toString(),
+                    symptomsCsv
+            );
+            
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                log.error("AI Inference failed with exit code: " + exitCode + ". Output: " + output);
+                return fallback("SARI", 50, "Yapay zeka analiz servisine ulaşılamadı. Varsayılan olarak SARI atandı.");
+            }
+
+            // Parse output JSON
+            String jsonOutput = output.toString().trim();
+            Map<String, Object> result = objectMapper.readValue(jsonOutput, new TypeReference<Map<String, Object>>() {});
+            
+            if (result.containsKey("error")) {
+                log.error("AI Inference returned error: " + result.get("error"));
+                return fallback("SARI", 50, "Makine öğrenmesi modeli bir hata döndürdü: " + result.get("error"));
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Exception during AI Inference", e);
+            return fallback("SARI", 50, "Sistem hatası nedeniyle analiz yapılamadı. Güvenlik amaçlı SARI atandı.");
+        }
+    }
+
+    private Map<String, Object> fallback(String color, int confidence, String explanation) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("color", color);
+        res.put("confidence", confidence);
+        res.put("explanation", explanation);
+        return res;
     }
 }

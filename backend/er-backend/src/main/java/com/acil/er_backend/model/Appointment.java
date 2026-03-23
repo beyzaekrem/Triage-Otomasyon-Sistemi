@@ -39,6 +39,11 @@ public class Appointment {
     @Column(length = 4096)
     private String basicSymptomsCsv;
 
+    // 0 = KIRMIZI, 1 = SARI, 2 = YESIL, 3 = UNASSIGNED
+    private Integer priorityLevel;
+    
+    private String currentTriageColor;
+
     private LocalDateTime createdAt;
     private LocalDateTime calledAt;
     private LocalDateTime startedAt;
@@ -48,6 +53,9 @@ public class Appointment {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         appointmentDate = LocalDate.now();
+        if (priorityLevel == null) {
+            priorityLevel = 3; // Default undefined status priority
+        }
     }
 
     public Long getActualWaitMinutes() {

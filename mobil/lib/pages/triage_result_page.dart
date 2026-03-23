@@ -63,6 +63,7 @@ class _TriageResultPageState extends State<TriageResultPage> {
             status.estimatedWaitMinutes ?? current.estimatedWaitMinutes,
         status: status.status ?? current.status,
         statusMessage: status.message ?? current.statusMessage,
+        colorCode: status.colorCode ?? current.colorCode,
       );
       await StorageService.saveLastPatient(updated);
       setState(() {
@@ -125,6 +126,7 @@ class _TriageResultPageState extends State<TriageResultPage> {
                   children: [
                     if (_isCalled(p)) _buildCalledBanner(),
                     if (_isFinished) _buildFinishedBanner(),
+                    if (p.colorCode != null) _buildColorCodeBanner(p.colorCode!),
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -410,6 +412,68 @@ class _TriageResultPageState extends State<TriageResultPage> {
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorCodeBanner(String colorCode) {
+    Color bgColor;
+    Color textColor = Colors.white;
+    String label = "";
+    IconData iconData = Icons.info;
+
+    switch (colorCode.toUpperCase()) {
+      case 'KIRMIZI':
+        bgColor = Colors.red.shade700;
+        label = "KIRMIZI KOD";
+        iconData = Icons.warning_rounded;
+        break;
+      case 'SARI':
+        bgColor = Colors.amber.shade700;
+        label = "SARI KOD";
+        iconData = Icons.access_time_filled;
+        break;
+      case 'YESIL':
+        bgColor = Colors.green.shade600;
+        label = "YEŞİL KOD";
+        iconData = Icons.check_circle;
+        break;
+      default:
+        bgColor = AppColors.primary;
+        label = colorCode;
+        iconData = Icons.local_hospital;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: bgColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(iconData, color: textColor, size: 28),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              letterSpacing: 1.2,
             ),
           ),
         ],

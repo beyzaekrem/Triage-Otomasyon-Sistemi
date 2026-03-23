@@ -11,9 +11,9 @@ import java.util.Optional;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    List<Appointment> findByAppointmentDateOrderByQueueNumberAsc(LocalDate date);
+    List<Appointment> findByAppointmentDateOrderByPriorityLevelAscQueueNumberAsc(LocalDate date);
 
-    List<Appointment> findByAppointmentDateAndStatusOrderByQueueNumberAsc(LocalDate date, AppointmentStatus status);
+    List<Appointment> findByAppointmentDateAndStatusOrderByPriorityLevelAscQueueNumberAsc(LocalDate date, AppointmentStatus status);
 
     @Query("SELECT COALESCE(MAX(a.queueNumber), 0) FROM Appointment a WHERE a.appointmentDate = :date")
     int findTodayMaxQueueNumber(@Param("date") LocalDate date);

@@ -21,6 +21,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepo;
     private final TriageRecordRepository triageRepo;
     private final DoctorNoteRepository noteRepo;
+    private final MedicalInferenceService medicalInferenceService;
 
     @Override
     @Transactional
@@ -43,6 +44,27 @@ public class AppointmentServiceImpl implements AppointmentService {
         ap.setEstimatedWaitMinutes(estimatedWait);
         ap.setBasicSymptomsCsv(basicSymptomsCsv);
         ap.setCreatedAt(LocalDateTime.now());
+        
+        // Triyaj öncesi ML Inference
+        if (basicSymptomsCsv != null && !basicSymptomsCsv.isBlank()) {
+            List<String> symptoms = Arrays.stream(basicSymptomsCsv.split(","))
+                    .map(String::trim).filter(s -> !s.isBlank())
+                    .toList();
+            try {
+                Map<String, Object> aiResult = medicalInferenceService.inferTriage(symptoms);
+                String aiColor = (String) aiResult.getOrDefault("color", "YESIL");
+                
+                int priority = 3;
+                if ("KIRMIZI".equals(aiColor)) priority = 0;
+                else if ("SARI".equals(aiColor)) priority = 1;
+                else if ("YESIL".equals(aiColor)) priority = 2;
+
+                ap.setPriorityLevel(priority);
+                ap.setCurrentTriageColor(aiColor);
+            } catch (Exception e) {
+                log.warn("Triyaj öncesi ML atamasi basarisiz: {}", e.getMessage());
+            }
+        }
 
         return appointmentRepo.save(ap);
     }
@@ -50,13 +72,13 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     @Transactional(readOnly = true)
     public List<Appointment> getTodayAppointments() {
-        return appointmentRepo.findByAppointmentDateOrderByQueueNumberAsc(LocalDate.now());
+        return appointmentRepo.findByAppointmentDateOrderByPriorityLevelAscQueueNumberAsc(LocalDate.now());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Appointment> getTodayAppointmentsByStatus(AppointmentStatus status) {
-        return appointmentRepo.findByAppointmentDateAndStatusOrderByQueueNumberAsc(LocalDate.now(), status);
+        return appointmentRepo.findByAppointmentDateAndStatusOrderByPriorityLevelAscQueueNumberAsc(LocalDate.now(), status);
     }
 
     @Override
@@ -174,6 +196,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             String maskedName = parts[0] + " " + (parts.length > 1 ? parts[parts.length - 1].charAt(0) + "***" : "");
             call.setPatientName(maskedName);
             call.setMessage("Lütfen muayene odasına geçiniz");
+            call.setColorCode(current.getCurrentTriageColor());
             display.setCurrentCall(call);
         }
 
@@ -185,6 +208,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             wp.setQueueNumber(ap.getQueueNumber());
             wp.setStatus("Bekliyor");
             wp.setAheadCount(i);
+            wp.setColorCode(ap.getCurrentTriageColor());
             list.add(wp);
         }
         display.setWaitingList(list);
@@ -212,6 +236,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         status.setStatus(ap.getStatus().name());
         status.setPatientName(ap.getPatient().getName());
         status.setEstimatedWaitMinutes(ap.getEstimatedWaitMinutes());
+        status.setColorCode(ap.getCurrentTriageColor());
 
         if (ap.getStatus() == AppointmentStatus.CALLED) {
             status.setWaitingAhead(0);

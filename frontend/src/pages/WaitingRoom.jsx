@@ -80,20 +80,48 @@ const WaitingRoom = () => {
                 </div>
 
                 <div className="waiting-list">
-                    <h2>📋 Bekleyen Sıra Numaraları</h2>
-                    <div className="queue-numbers">
-                        {data?.waitingList?.length > 0 ? (
-                            data.waitingList.map((w, i) => (
-                                <div key={i} className="queue-item">
-                                    {w.queueNumber}
-                                </div>
-                            ))
-                        ) : (
-                            <p className="no-waiting">Bekleyen hasta yok</p>
-                        )}
+                    <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>📋 Bekleyen Sıra Numaraları</h2>
+                    
+                    <div className="waiting-lists-container" style={{ display: 'flex', gap: '20px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                        <div className="queue-column" style={{ flex: '1 1 30%', backgroundColor: '#fff1f0', padding: '15px', borderRadius: '12px', border: '2px solid #ffccc7', minWidth: '250px' }}>
+                            <h3 style={{ color: '#cf1322', textAlign: 'center', marginBottom: '15px', fontSize: '1.2rem' }}>🟥 KIRMIZI (Acil)</h3>
+                            <div className="queue-numbers" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                                {data?.waitingList?.filter(w => w.colorCode === 'KIRMIZI').map((w, i) => (
+                                    <div key={i} className="queue-item" style={{ backgroundColor: '#ff4d4f', color: 'white', border: 'none' }}>
+                                        {w.queueNumber}
+                                    </div>
+                                ))}
+                                {data?.waitingList?.filter(w => w.colorCode === 'KIRMIZI').length === 0 && <p className="no-waiting" style={{ color: '#ff7875' }}>Yok</p>}
+                            </div>
+                        </div>
+
+                        <div className="queue-column" style={{ flex: '1 1 30%', backgroundColor: '#fffbe6', padding: '15px', borderRadius: '12px', border: '2px solid #ffe58f', minWidth: '250px' }}>
+                            <h3 style={{ color: '#d48806', textAlign: 'center', marginBottom: '15px', fontSize: '1.2rem' }}>🟨 SARI (Öncelikli)</h3>
+                            <div className="queue-numbers" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                                {data?.waitingList?.filter(w => w.colorCode === 'SARI' || !w.colorCode).map((w, i) => (
+                                    <div key={i} className="queue-item" style={{ backgroundColor: '#faad14', color: 'white', border: 'none' }}>
+                                        {w.queueNumber}
+                                    </div>
+                                ))}
+                                {data?.waitingList?.filter(w => w.colorCode === 'SARI' || !w.colorCode).length === 0 && <p className="no-waiting" style={{ color: '#ffc53d' }}>Yok</p>}
+                            </div>
+                        </div>
+
+                        <div className="queue-column" style={{ flex: '1 1 30%', backgroundColor: '#f6ffed', padding: '15px', borderRadius: '12px', border: '2px solid #b7eb8f', minWidth: '250px' }}>
+                            <h3 style={{ color: '#389e0d', textAlign: 'center', marginBottom: '15px', fontSize: '1.2rem' }}>🟩 YEŞİL (Normal)</h3>
+                            <div className="queue-numbers" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                                {data?.waitingList?.filter(w => w.colorCode === 'YESIL').map((w, i) => (
+                                    <div key={i} className="queue-item" style={{ backgroundColor: '#52c41a', color: 'white', border: 'none' }}>
+                                        {w.queueNumber}
+                                    </div>
+                                ))}
+                                {data?.waitingList?.filter(w => w.colorCode === 'YESIL').length === 0 && <p className="no-waiting" style={{ color: '#95de64' }}>Yok</p>}
+                            </div>
+                        </div>
                     </div>
-                    <div className="total-waiting">
-                        Toplam Bekleyen: <strong>{data?.totalWaiting || 0}</strong>
+
+                    <div className="total-waiting" style={{ marginTop: '25px', textAlign: 'center', fontSize: '1.2rem', padding: '15px', backgroundColor: '#f0f5ff', borderRadius: '8px' }}>
+                        Toplam Bekleyen Hasta: <strong>{data?.totalWaiting || 0}</strong>
                     </div>
                 </div>
             </main>

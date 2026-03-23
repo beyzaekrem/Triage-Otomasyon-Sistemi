@@ -117,17 +117,18 @@ public class MobileController {
             return;
         }
 
-        List<Map<String, Object>> top5 = medicalInferenceService.suggestTop5(symptoms);
-        if (top5 != null && !top5.isEmpty()) {
-            Map<String, Object> best = top5.get(0);
-            resp.setUrgencyLevel(parseInt(best.get("urgency_level"), 3));
-            resp.setUrgencyLabel(str(best.get("urgency_label"), "BELIRSIZ"));
-            resp.setResponseText(str(best.get("response"),
-                    "Belirtileriniz kaydedildi. Lütfen acil serviste bekleyiniz."));
-            resp.setReasoning(str(best.get("reasoning"), null));
-        } else {
-            setDefaultUrgency(resp);
-        }
+        Map<String, Object> aiResult = medicalInferenceService.inferTriage(symptoms);
+        
+        String color = (String) aiResult.getOrDefault("color", "YESIL");
+        int level = 3;
+        if ("KIRMIZI".equals(color)) level = 0;
+        else if ("SARI".equals(color)) level = 1;
+        else if ("YESIL".equals(color)) level = 2;
+
+        resp.setUrgencyLevel(level);
+        resp.setUrgencyLabel(color);
+        resp.setReasoning((String) aiResult.getOrDefault("explanation", "AI Değerlendirmesi."));
+        resp.setResponseText("Belirtileriniz AI tarafından değerlendirildi. Yüksek öncelik durumunda sıranız öne alınacaktır. Lütfen acil serviste bekleyiniz.");
     }
 
     private void setDefaultUrgency(MobileTriageResponse resp) {

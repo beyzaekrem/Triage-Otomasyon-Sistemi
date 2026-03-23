@@ -52,24 +52,45 @@ public class TriageServiceImpl implements TriageService {
             tr.setCreatedBy("system");
         }
 
-        // Use centralized MedicalInferenceService instead of duplicating scoring logic
+        // ML Inference Call
         List<String> symptoms = parseCsv(req.getNurseSymptomsCsv());
+        String aiColor = "YESIL";
+        int confidence = 50;
+        
         try {
-            List<Map<String, Object>> top5 = medicalInferenceService.suggestTop5(symptoms);
-            if (!top5.isEmpty()) {
-                tr.setSuggestionsJson(objectMapper.writeValueAsString(top5));
-                int maxUrgency = top5.stream()
-                        .mapToInt(s -> {
-                            Object level = s.get("urgency_level");
-                            return level != null ? Integer.parseInt(level.toString()) : 0;
-                        })
-                        .max().orElse(0);
-                tr.setAiSuggestedLevel(maxUrgency >= 4 ? "KIRMIZI" : maxUrgency >= 3 ? "SARI" : "YESIL");
-                tr.setAiConfidence((int) Math.min(100, 50 + top5.size() * 10));
-            }
+            Map<String, Object> aiResult = medicalInferenceService.inferTriage(symptoms);
+            
+            aiColor = (String) aiResult.getOrDefault("color", "YESIL");
+            Number confNum = (Number) aiResult.getOrDefault("confidence", 50);
+            confidence = confNum.intValue();
+            String explanation = (String) aiResult.getOrDefault("explanation", "");
+
+            tr.setAiSuggestedLevel(aiColor);
+            tr.setAiConfidence(confidence);
+            tr.setSuggestionsJson(explanation); // Using this field to store the clean AI explanation
+
         } catch (Exception e) {
             log.warn("Tıbbi öneri oluşturulamadı: {}", e.getMessage());
         }
+
+        // Determine final color (Override priority)
+        String finalColor = (req.getTriageLevel() != null && !req.getTriageLevel().isBlank()) 
+                ? req.getTriageLevel().toUpperCase() 
+                : aiColor;
+                
+        // Ensure triageRecord has the finalColor saved
+        tr.setTriageLevel(finalColor);
+
+        // Map to Priority Level (0 = Highest priority)
+        int priority = 3;
+        if ("KIRMIZI".equals(finalColor)) priority = 0;
+        else if ("SARI".equals(finalColor)) priority = 1;
+        else if ("YESIL".equals(finalColor)) priority = 2;
+
+        // Update Appointment Priority to immediately reorder the queue
+        ap.setPriorityLevel(priority);
+        ap.setCurrentTriageColor(finalColor);
+        appointmentRepository.save(ap);
 
         return triageRecordRepository.save(tr);
     }
