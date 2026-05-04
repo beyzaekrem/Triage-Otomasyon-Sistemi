@@ -160,6 +160,8 @@ class _PatientCardPageState extends State<PatientCardPage> {
   }
 
   Widget _buildPatientInfo(Patient p) {
+    final isDone = (p.status ?? '').toUpperCase() == 'DONE' ||
+                   (p.status ?? '').toUpperCase() == 'NO_SHOW';
     final waitTime = p.estimatedWaitMinutes ??
         UrgencyHelper.getEstimatedWaitTime(p.queueNumber);
     final statusText = p.statusMessage ?? p.status;
@@ -167,60 +169,63 @@ class _PatientCardPageState extends State<PatientCardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.confirmation_number,
-              color: AppColors.primary,
-              size: 24,
+        if (isDone) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: AppColors.textTertiary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.textTertiary.withValues(alpha: 0.3)),
             ),
-            const SizedBox(width: 12),
-            Text(
-              "${AppStrings.queueNumber}:",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              "${p.queueNumber}",
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            const Icon(
-              Icons.access_time,
-              size: 20,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "${AppStrings.estimatedWait}: ~$waitTime ${AppStrings.minutes}",
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-        if (statusText != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            statusText,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+            child: Row(
+              children: [
+                const Icon(Icons.task_alt, color: AppColors.textPrimary, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Bu randevu tamamlandı. Yeni bir randevu oluşturabilirsiniz.',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                ),
+              ],
             ),
           ),
+        ] else ...[
+          Row(
+            children: [
+              const Icon(Icons.confirmation_number, color: AppColors.primary, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                "${AppStrings.queueNumber}:",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+              ),
+              const Spacer(),
+              Text(
+                "${p.queueNumber}",
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.access_time, size: 20, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                "${AppStrings.estimatedWait}: ~$waitTime ${AppStrings.minutes}",
+                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+          if (statusText != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              statusText,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ],
         ],
       ],
     );

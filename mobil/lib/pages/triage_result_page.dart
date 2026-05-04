@@ -52,29 +52,40 @@ class _TriageResultPageState extends State<TriageResultPage> {
       final status = await TriageService().fetchQueueStatus(current.nationalId);
       if (status == null) return;
 
-      final newWait = status.estimatedWaitMinutes ?? current.estimatedWaitMinutes;
-      final newStatusText = status.message ?? status.status ?? current.status;
-      final hasChange = (_lastWait != null && newWait != _lastWait) ||
-          (_lastStatusText != null && newStatusText != _lastStatusText);
+      Patient updated;
+      if (status.found == false) {
+        // Aktif randevu yoksa muhtemelen tamamlanmıştır, bilgileri temizle
+        updated = current.copyWith(
+          status: 'DONE',
+          statusMessage: status.message ?? 'Bugün için aktif randevunuz bulunmamaktadır.',
+          estimatedWaitMinutes: null,
+          colorCode: null,
+        );
+      } else {
+        final newWait = status.estimatedWaitMinutes ?? current.estimatedWaitMinutes;
+        final newStatusText = status.message ?? status.status ?? current.status;
+        final hasChange = (_lastWait != null && newWait != _lastWait) ||
+            (_lastStatusText != null && newStatusText != _lastStatusText);
 
-      final updated = current.copyWith(
-        queueNumber: status.queueNumber ?? current.queueNumber,
-        estimatedWaitMinutes:
-            status.estimatedWaitMinutes ?? current.estimatedWaitMinutes,
-        status: status.status ?? current.status,
-        statusMessage: status.message ?? current.statusMessage,
-        colorCode: status.colorCode ?? current.colorCode,
-      );
+        updated = current.copyWith(
+          queueNumber: status.queueNumber ?? current.queueNumber,
+          estimatedWaitMinutes: newWait,
+          status: status.status ?? current.status,
+          statusMessage: status.message ?? current.statusMessage,
+          colorCode: status.colorCode ?? current.colorCode,
+        );
+
+        if (_notifyOnUpdate && hasChange) {
+          _playAlert();
+        }
+      }
+
       await StorageService.saveLastPatient(updated);
       setState(() {
         _p = updated;
         _lastWait = updated.estimatedWaitMinutes;
         _lastStatusText = updated.statusMessage ?? updated.status;
       });
-
-      if (_notifyOnUpdate && hasChange) {
-        _playAlert();
-      }
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }

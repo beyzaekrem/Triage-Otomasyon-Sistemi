@@ -30,7 +30,6 @@ const Appointments = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL');
-    const [dateFilter, setDateFilter] = useState('TODAY');
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -60,23 +59,9 @@ const Appointments = () => {
         }
     };
 
-    const byStatus = filter === 'ALL'
+    const filtered = filter === 'ALL'
         ? appointments
         : appointments.filter(a => a.status === filter);
-
-    const byDate = byStatus.filter((a) => {
-        if (!a.createdAt) return true;
-        const created = new Date(a.createdAt);
-        const now = new Date();
-        if (dateFilter === 'TODAY') {
-            return created.toDateString() === now.toDateString();
-        }
-        if (dateFilter === '7D') {
-            const diff = (now - created) / (1000 * 60 * 60 * 24);
-            return diff <= 7;
-        }
-        return true;
-    });
 
     if (loading) return <div className="loading">Yükleniyor...</div>;
 
@@ -102,18 +87,7 @@ const Appointments = () => {
     return (
         <div className="appointments-page">
             <div className="page-header">
-                <h1>📋 Randevular</h1>
-                <div className="date-filters">
-                    {['TODAY', '7D', 'ALL'].map((d) => (
-                        <button
-                            key={d}
-                            className={`filter-chip ${dateFilter === d ? 'active' : ''}`}
-                            onClick={() => setDateFilter(d)}
-                        >
-                            {d === 'TODAY' ? 'Bugün' : d === '7D' ? 'Son 7 gün' : 'Tümü'}
-                        </button>
-                    ))}
-                </div>
+                <h1>📋 Randevular <span style={{ fontSize: '0.7em', color: '#888', fontWeight: 400 }}>(Bugün — {new Date().toLocaleDateString('tr-TR')})</span></h1>
                 <div className="filter-tabs">
                     {['ALL', 'WAITING', 'CALLED', 'IN_PROGRESS', 'DONE', 'NO_SHOW'].map(s => (
                         <button
@@ -133,13 +107,13 @@ const Appointments = () => {
             </div>
 
             <div className="appointments-list">
-                {byDate.length === 0 ? (
+                {filtered.length === 0 ? (
                     <div className="empty-state">
                         <span className="empty-icon">📭</span>
                         <p>Randevu bulunamadı</p>
                     </div>
                 ) : (
-                    byDate.map(ap => (
+                    filtered.map(ap => (
                         <div key={ap.id} className="appointment-card">
                             <div className="card-header">
                                 <div className="queue-badge">{ap.queueNumber}</div>
@@ -194,14 +168,20 @@ const Appointments = () => {
 
                                 {user?.role === 'DOCTOR' && (
                                     <>
-                                        {ap.status === 'CALLED' && (
-                                            <button
-                                                className="btn btn-start"
-                                                onClick={() => updateStatus(ap.id, 'IN_PROGRESS')}
-                                            >
-                                                🩺 Muayeneye Al
-                                            </button>
-                                        )}
+                                        {ap.status === 'CALLED' && (() => {
+                                            const hasTriaged = !!ap.currentTriageColor;
+                                            return (
+                                                <button
+                                                    className="btn btn-start"
+                                                    onClick={() => hasTriaged && updateStatus(ap.id, 'IN_PROGRESS')}
+                                                    disabled={!hasTriaged}
+                                                    title={hasTriaged ? '' : 'Triaj yapılmadan muayene başlatılamaz'}
+                                                    style={!hasTriaged ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                                >
+                                                    🩺 Muayeneye Al {!hasTriaged && '(Triaj Bekleniyor)'}
+                                                </button>
+                                            );
+                                        })()}
                                         {ap.status === 'IN_PROGRESS' && (
                                             <button
                                                 className="btn btn-note"

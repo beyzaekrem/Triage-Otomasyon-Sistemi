@@ -112,21 +112,22 @@ def main():
             pred_idx = kirmizi_idx
             color = "KIRMIZI"
             confidence = int(kirmizi_prob * 100)
-            explanation = f"AI TIBBI GUVENLIK AGI: Kirmizi Kod (%{confidence}) atandi. Model %20+ risk algiladigi icin hasta riske atilmadi. {kw_text}."
+            explanation = f"AI Güvenlik Ağı: Kırmızı Kod (%{confidence}) atandı. Model %20 üzerinde risk algıladığı için hasta risk altına alınmadı. {kw_text}."
             
-        # KURAL 2: Ölümcül kelime varsa (ve kirmizi prob %20'yi gecmediyse bile) zorla Kirmizi ver!
+        # KURAL 2: Olumcul kelime varsa (ve kirmizi prob %20'yi gecmediyse bile) zorla Kirmizi ver!
         elif is_fatal:
             pred_idx = kirmizi_idx
             color = "KIRMIZI"
             confidence = 99
-            explanation = f"AI TIBBI GUVENLIK AGI: Kirmizi Kod atandi. Olumcul bulgu tespit edildi ({', '.join(matched_fatals)}). {kw_text}."
+            explanation = f"AI Güvenlik Ağı: Kırmızı Kod atandı. Ölümcül bulgu tespit edildi ({', '.join(matched_fatals)}). {kw_text}."
             
         # KURAL 3: Normal secim (Sari veya Yesil)
         else:
             pred_idx = np.argmax(probs)
             color = classes[pred_idx].upper()
+            label_tr = {'KIRMIZI': 'Kırmızı', 'SARI': 'Sarı', 'YESIL': 'Yeşil'}.get(color, color)
             confidence = int(probs[pred_idx] * 100)
-            explanation = f"AI Algoritmasi {color} Kodu (%{confidence}) olarak siniflandirdi. {kw_text}."
+            explanation = f"AI Algoritması {label_tr} Kod (%{confidence}) olarak sınıflandırdı. {kw_text}."
 
         print(json.dumps({
             "color": color,

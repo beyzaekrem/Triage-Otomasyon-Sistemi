@@ -53,8 +53,13 @@ public class MobileController {
         }
 
         Optional<Patient> patientOpt = patientService.getPatientByTc(tc);
-        if (patientOpt.isPresent() && patientOpt.get().getName().equalsIgnoreCase(name)) {
-            return ResponseEntity.ok(Map.of("message", "Giriş başarılı.", "patient", patientOpt.get()));
+        if (patientOpt.isPresent()) {
+            java.util.Locale trLocale = new java.util.Locale("tr", "TR");
+            String storedName = patientOpt.get().getName().toLowerCase(trLocale).trim();
+            String inputName = name.toLowerCase(trLocale).trim();
+            if (storedName.equals(inputName)) {
+                return ResponseEntity.ok(Map.of("message", "Giriş başarılı.", "patient", patientOpt.get()));
+            }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Geçersiz TC veya isim."));

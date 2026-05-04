@@ -13,11 +13,23 @@ class StorageService {
   static Future<void> saveLastPatient(Patient p) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final patientWithTimestamp = p.copyWith(createdAt: DateTime.now());
-      await prefs.setString(_kLastPatientKey, jsonEncode(patientWithTimestamp.toJson()));
-      
+      // Only stamp createdAt on the very first save; preserve it on updates.
+      final existingStr = prefs.getString(_kLastPatientKey);
+      DateTime? originalCreatedAt;
+      if (existingStr != null) {
+        try {
+          final existing = Patient.fromJson(jsonDecode(existingStr) as Map<String, dynamic>);
+          if (existing.nationalId == p.nationalId) {
+            originalCreatedAt = existing.createdAt;
+          }
+        } catch (_) {}
+      }
+      final patientToSave = p.copyWith(
+        createdAt: originalCreatedAt ?? p.createdAt ?? DateTime.now(),
+      );
+      await prefs.setString(_kLastPatientKey, jsonEncode(patientToSave.toJson()));
       // Also add to history
-      await _addToHistory(patientWithTimestamp);
+      await _addToHistory(patientToSave);
     } catch (e) {
       throw Exception('Hasta kaydedilirken hata oluştu: $e');
     }

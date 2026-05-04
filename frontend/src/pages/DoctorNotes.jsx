@@ -191,19 +191,10 @@ const DoctorNotes = () => {
         }
     };
 
-    const parseSuggestions = (jsonStr) => {
-        if (!jsonStr) return [];
-        try {
-            return JSON.parse(jsonStr);
-        } catch {
-            return [];
-        }
-    };
-
     if (loading) return <div className="loading"><div className="spinner"></div><p>Yükleniyor...</p></div>;
 
     const latestTriage = appointment?.triageRecords?.[0];
-    const suggestions = latestTriage?.suggestionsJson ? parseSuggestions(latestTriage.suggestionsJson) : [];
+    const aiExplanation = latestTriage?.suggestionsJson || null;
 
     return (
         <div className="form-page">
@@ -231,29 +222,30 @@ const DoctorNotes = () => {
                 </div>
             )}
 
-            {suggestions.length > 0 && (
-                <div className="form-section suggestions-section">
+            {aiExplanation && (
+                <div className="form-section suggestions-section" style={{ backgroundColor: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: '12px' }}>
                     <div className="section-header">
-                        <h3>📊 Veri Setinden Eşleşen Kayıtlar (Triaj'dan)</h3>
-                        <span className="info-badge">Triyaj sırasında kaydedilen semptomlara göre</span>
+                        <h3 style={{ color: '#1d39c4' }}>🤖 Yapay Zeka Triaj Değerlendirmesi</h3>
+                        <span className="info-badge">Triaj sırasında kaydedilen semptomlara göre ML analizi</span>
                     </div>
-                    <div className="suggestions-grid">
-                        {suggestions.map((suggestion, idx) => {
-                            const matchScore = suggestion.match_score || 0;
-                            const reasoning = suggestion.reasoning || 'Açıklama mevcut değil';
-
-                            return (
-                                <div key={idx} className="suggestion-card">
-                                    <div className="suggestion-header">
-                                        <div className="suggestion-rank">#{idx + 1}</div>
-                                        <div className="suggestion-score">Eşleşme: {matchScore}/{latestTriage?.nurseSymptomsCsv?.split(',').length || 0}</div>
-                                    </div>
-                                    <div className="suggestion-content">
-                                        <p className="suggestion-text">{reasoning}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="suggestion-card" style={{ borderLeft: `6px solid ${
+                        latestTriage?.aiSuggestedLevel === 'KIRMIZI' ? '#ff4d4f' :
+                        latestTriage?.aiSuggestedLevel === 'SARI' ? '#faad14' : '#52c41a'
+                    }` }}>
+                        {latestTriage?.aiSuggestedLevel && (
+                            <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{
+                                    backgroundColor: latestTriage.aiSuggestedLevel === 'KIRMIZI' ? '#ff4d4f' : latestTriage.aiSuggestedLevel === 'SARI' ? '#faad14' : '#52c41a',
+                                    color: 'white', padding: '4px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.85rem'
+                                }}>
+                                    AI Önerisi: {latestTriage.aiSuggestedLevel}
+                                </span>
+                                {latestTriage?.aiConfidence && (
+                                    <span style={{ color: '#595959', fontSize: '0.9rem' }}>%{latestTriage.aiConfidence} Güven</span>
+                                )}
+                            </div>
+                        )}
+                        <p className="suggestion-text" style={{ fontStyle: 'italic', color: '#434343', margin: 0 }}>{aiExplanation}</p>
                     </div>
                 </div>
             )}

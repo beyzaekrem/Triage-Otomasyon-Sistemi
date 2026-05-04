@@ -38,8 +38,14 @@ const TriageForm = () => {
                 setAppointment(detail);
                 setAllSymptoms(Array.isArray(syms) ? syms : Object.values(syms));
                 
-                if (detail && detail.appointment && detail.appointment.currentTriageColor) {
-                    setForm(prev => ({ ...prev, triageLevel: detail.appointment.currentTriageColor }));
+                if (detail && detail.appointment) {
+                    if (detail.appointment.currentTriageColor) {
+                        setForm(prev => ({ ...prev, triageLevel: detail.appointment.currentTriageColor }));
+                    }
+                    if (detail.appointment.basicSymptomsCsv) {
+                        const patientSymptoms = detail.appointment.basicSymptomsCsv.split(',').map(s => s.trim()).filter(Boolean);
+                        setSymptoms(patientSymptoms);
+                    }
                 }
             } catch (err) {
                 toast.error('Veriler yüklenemedi: ' + err.message);
@@ -152,6 +158,15 @@ const TriageForm = () => {
                             }}>
                                 📌 Mevcut Durum: {appointment.appointment.currentTriageColor}
                             </span>
+                        )}
+                        {appointment.appointment?.basicSymptomsCsv && (
+                            <div style={{ width: '100%', marginTop: '5px', padding: '10px 15px', backgroundColor: '#e6f7ff', borderRadius: '8px', border: '1px solid #91d5ff', color: '#0050b3', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '1.2em' }}>📱</span>
+                                <div>
+                                    <strong>Hastanın mobilden bildirdiği şikayetler otomatik aktarıldı:</strong> 
+                                    <span style={{ fontStyle: 'italic', marginLeft: '5px' }}>{appointment.appointment.basicSymptomsCsv}</span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}

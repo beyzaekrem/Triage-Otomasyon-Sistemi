@@ -1,8 +1,11 @@
+// Sentinel object to distinguish "not provided" from explicit null in copyWith
+const _absent = Object();
+
 class Patient {
   final String fullName;
   final String nationalId;
   final List<String> symptoms;
-  final int queueNumber;        // statik/örnek
+  final int queueNumber;
   final String urgencyLabel;    // ACIL / ONCELIKLI / NORMAL
   final int urgencyLevel;       // 1 ACIL ... 3 NORMAL
   final String responseText;    // hastaya gösterilecek açıklama
@@ -31,7 +34,8 @@ class Patient {
     this.colorCode,
   });
 
-  /// Create a copy with updated fields
+  /// Create a copy with updated fields.
+  /// Pass explicit `null` to CLEAR a nullable field (e.g. colorCode: null).
   Patient copyWith({
     String? fullName,
     String? nationalId,
@@ -40,13 +44,13 @@ class Patient {
     String? urgencyLabel,
     int? urgencyLevel,
     String? responseText,
-    DateTime? createdAt,
-    int? estimatedWaitMinutes,
-    String? status,
-    String? statusMessage,
-    int? birthYear,
-    String? gender,
-    String? colorCode,
+    Object? createdAt = _absent,
+    Object? estimatedWaitMinutes = _absent,
+    Object? status = _absent,
+    Object? statusMessage = _absent,
+    Object? birthYear = _absent,
+    Object? gender = _absent,
+    Object? colorCode = _absent,
   }) {
     return Patient(
       fullName: fullName ?? this.fullName,
@@ -56,13 +60,13 @@ class Patient {
       urgencyLabel: urgencyLabel ?? this.urgencyLabel,
       urgencyLevel: urgencyLevel ?? this.urgencyLevel,
       responseText: responseText ?? this.responseText,
-      createdAt: createdAt ?? this.createdAt,
-      estimatedWaitMinutes: estimatedWaitMinutes ?? this.estimatedWaitMinutes,
-      status: status ?? this.status,
-      statusMessage: statusMessage ?? this.statusMessage,
-      birthYear: birthYear ?? this.birthYear,
-      gender: gender ?? this.gender,
-      colorCode: colorCode ?? this.colorCode,
+      createdAt: identical(createdAt, _absent) ? this.createdAt : createdAt as DateTime?,
+      estimatedWaitMinutes: identical(estimatedWaitMinutes, _absent) ? this.estimatedWaitMinutes : estimatedWaitMinutes as int?,
+      status: identical(status, _absent) ? this.status : status as String?,
+      statusMessage: identical(statusMessage, _absent) ? this.statusMessage : statusMessage as String?,
+      birthYear: identical(birthYear, _absent) ? this.birthYear : birthYear as int?,
+      gender: identical(gender, _absent) ? this.gender : gender as String?,
+      colorCode: identical(colorCode, _absent) ? this.colorCode : colorCode as String?,
     );
   }
 

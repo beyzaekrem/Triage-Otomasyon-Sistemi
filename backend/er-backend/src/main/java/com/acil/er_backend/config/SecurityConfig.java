@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/appointments").permitAll()
                         .requestMatchers("/api/mobile/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/appointments/mobile/queue/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/appointments/history/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/appointments/waiting-room").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/medical/**").permitAll()
                         .requestMatchers("/api/triage/**").hasRole("NURSE")
