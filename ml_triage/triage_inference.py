@@ -15,9 +15,22 @@ CRITICAL_KW = [
 
 # TIBBI GUVENLIK AGI KELIMELERI (Bunlar varsa asla YESIL olamaz, KIRMIZI olma ihtimali zorlanir)
 FATAL_KEYWORDS = [
-    'kalp krizi', 'koma', 'nefes alam', 'bilinc kapali', 'silah', 'bicak',
-    'intihar', 'baygin', 'nabiz yok', 'kalbi dur', 'solunum yok', 'felc',
-    'gogus agrisi', 'gogsum sikisiyor'
+    # Kalp ve Dolaşım
+    'kalp krizi', 'kalbi dur', 'nabiz yok', 'gogus agrisi', 'gogsum sikisiyor',
+    'sol kola yayilan', 'sol kolda uyusma', 'sol kol agrisi', 'sol kolda karincalanma',
+    
+    # Solunum ve Alerji
+    'nefes alam', 'solunum yok', 'anafilaksi', 'siyanoz', 'morarma', 'pembe kopuklu',
+    
+    # Nörolojik ve İnme (Felç)
+    'koma', 'bilinc kapali', 'bilinc bulanikligi', 'felc', 'yuz felci', 
+    'tek tarafli gucsuzluk', 'tek kolda uyusma', 'konusma bozuklugu', 'afazi', 
+    'peltek konusma', 'konusma guclugu', 'konvulsiyon', 'nobet', 'ense sertligi',
+    
+    # Travma, Zehirlenme ve İç Kanama
+    'silah', 'bicak', 'intihar', 'baygin', 'kan kusma', 'siyah diski', 'melena', 
+    'kanli diski', 'kanama durmuyor', 'hematemez', 'intoksikasyon', 'yilan sokmasi', 
+    'ari sokmasi', 'sok'
 ]
 
 def normalize_tr(text):
