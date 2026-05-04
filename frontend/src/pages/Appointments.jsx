@@ -20,6 +20,12 @@ const statusColors = {
     NO_SHOW: '#d9534f'
 };
 
+const triageConfig = {
+    KIRMIZI: { label: 'Kırmızı', color: '#ef4444', bg: '#fef2f2', border: '#fca5a5', icon: '🔴' },
+    SARI:    { label: 'Sarı',    color: '#f59e0b', bg: '#fffbeb', border: '#fcd34d', icon: '🟡' },
+    YESIL:   { label: 'Yeşil',   color: '#10b981', bg: '#ecfdf5', border: '#6ee7b7', icon: '🟢' },
+};
+
 const Appointments = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -74,6 +80,25 @@ const Appointments = () => {
 
     if (loading) return <div className="loading">Yükleniyor...</div>;
 
+    const getTriageBadge = (color) => {
+        if (!color) return null;
+        const cfg = triageConfig[color.toUpperCase()];
+        if (!cfg) return null;
+        return (
+            <span
+                className="triage-color-badge"
+                style={{
+                    backgroundColor: cfg.bg,
+                    color: cfg.color,
+                    border: `1.5px solid ${cfg.border}`,
+                }}
+            >
+                <span className="triage-dot" style={{ backgroundColor: cfg.color }}></span>
+                {cfg.label}
+            </span>
+        );
+    };
+
     return (
         <div className="appointments-page">
             <div className="page-header">
@@ -122,6 +147,7 @@ const Appointments = () => {
                                     <h3>{ap.patient?.name || 'İsimsiz'}</h3>
                                     <span className="tc">TC: {ap.patient?.tc}</span>
                                 </div>
+                                {getTriageBadge(ap.currentTriageColor)}
                                 <span
                                     className="status-badge"
                                     style={{ backgroundColor: statusColors[ap.status] }}
