@@ -7,6 +7,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_strings.dart';
 import '../models/patient.dart';
 import '../models/triage_request.dart';
+import '../services/auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/triage_service.dart';
 import '../utils/validators.dart';
@@ -175,7 +176,27 @@ class _RegisterPageState extends State<RegisterPage> {
             : null,
       );
 
-      // submitTriage already handles offline fallback internally
+      // 1. Önce hastayı kaydet (eğer zaten varsa 409 döner, o da kabul)
+      final patientToRegister = Patient(
+        nationalId: tc,
+        fullName: _nameCtrl.text.trim(),
+        birthYear: _birthYearCtrl.text.trim().isNotEmpty ? int.tryParse(_birthYearCtrl.text.trim()) : null,
+        gender: _gender,
+        symptoms: _picked.toList(),
+        queueNumber: 0,
+        urgencyLabel: '',
+        urgencyLevel: 3,
+        responseText: '',
+      );
+
+      // 1. Önce hastayı kaydetmeyi dene (Hata alırsa triyaj fallback'ine bırakmak için sessizce devam et)
+      try {
+        await AuthService().register(patientToRegister);
+      } catch (e) {
+        debugPrint("Kayıt denemesi (Online değil?): $e");
+      }
+
+      // 2. Şimdi triyajı gönder
       final apiResp = await TriageService().submitTriage(req);
 
       // Sıra bilgisi için backend kuyruğu dene (opsiyonel)
@@ -201,11 +222,12 @@ class _RegisterPageState extends State<RegisterPage> {
             AppStrings.defaultResponse,
         createdAt: DateTime.now(),
         estimatedWaitMinutes: estimatedWait,
-        status: apiResp?.status ?? finalQueueStatus?.status,
-        statusMessage: statusMessage,
+        status: apiResp?.status ?? finalQueueStatus?.status ?? 'TRIAGE_WAITING',
+        statusMessage: statusMessage ?? 'Triyaj değerlendirmesi bekleniyor...',
       );
 
       await StorageService.saveLastPatient(p);
+      await StorageService.saveAuthPatient(p);
 
       if (!mounted) return;
       setState(() => _submitting = false);
@@ -313,6 +335,26 @@ class _RegisterPageState extends State<RegisterPage> {
                     slivers: [
                       SliverToBoxAdapter(child: _buildFormHeader()),
                       SliverToBoxAdapter(child: _buildSearchCard()),
+                      // ── Bölüm Başlığı ──
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.list_alt, color: AppColors.primary, size: 18),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Kategoriye Göre Tüm Semptomlar',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       SliverList.builder(
                         itemCount: _categories.length,
                         itemBuilder: (context, ci) {
@@ -447,11 +489,22 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Widget _buildFormHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Form(
         key: _formKey,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Kişisel Bilgiler',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Triyaj değerlendirmesi için lütfen bilgilerinizi eksiksiz girin.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _nameCtrl,
               decoration: const InputDecoration(

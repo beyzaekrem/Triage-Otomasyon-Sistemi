@@ -55,48 +55,48 @@ class _HomePageState extends State<HomePage> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                const Spacer(flex: 2),
+                const Spacer(flex: 1),
                 _buildActionButton(
                   context,
-                  icon: Icons.person_add,
+                  icon: Icons.person_add_alt_1,
                   title: AppStrings.patientRegistration,
-                  subtitle: 'Semptom seçerek triage kaydı oluşturun',
+                  subtitle: 'Yeni bir triage kaydı oluşturun',
                   color: AppColors.primary,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const RegisterPage()),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _buildActionButton(
                   context,
-                  icon: Icons.assignment,
+                  icon: Icons.assignment_turned_in,
                   title: AppStrings.triageResult,
-                  subtitle: 'Son triage sonucunu görüntüleyin',
+                  subtitle: 'Aktif randevu durumunuz',
                   color: AppColors.info,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const TriageResultPage()),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 _buildActionButton(
                   context,
-                  icon: Icons.badge,
+                  icon: Icons.badge_outlined,
                   title: AppStrings.patientCard,
-                  subtitle: 'Hasta kartını görüntüleyin',
+                  subtitle: 'Hasta geçmişi ve bilgilerim',
                   color: AppColors.success,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const PatientCardPage()),
                   ),
                 ),
-                const Spacer(flex: 3),
+                const Spacer(flex: 2),
               ],
             ),
           ),
@@ -126,19 +126,19 @@ class _HomePageState extends State<HomePage> {
         const Text(
           AppStrings.appTitle,
           style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
             color: AppColors.textPrimary,
+            letterSpacing: -1,
           ),
         ),
         const SizedBox(height: 8),
         Text(
-          p != null
-              ? "${p.fullName} • ${p.nationalId}"
-              : 'Acil servis triage sistemi',
-          style: TextStyle(
-            fontSize: 16,
+          p != null ? "${p.fullName} • ${p.nationalId}" : 'Hospital Emergency Triage',
+          style: const TextStyle(
+            fontSize: 15,
             color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 8),
@@ -164,65 +164,82 @@ class _HomePageState extends State<HomePage> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
             color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 1.5,
-            ),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 28,
-                ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFF1F5F9),
+                width: 1.5,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withValues(alpha: 0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: color,
-                size: 20,
-              ),
-            ],
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: color.withValues(alpha: 0.5),
+                  size: 16,
+                ),
+              ],
+            ),
           ),
         ),
       ),

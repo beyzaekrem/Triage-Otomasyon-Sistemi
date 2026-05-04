@@ -17,7 +17,7 @@ class TriageService {
   bool _loaded = false;
   bool _loading = false;
 
-  /// Submit triage to backend. Falls back to local rules if backend fails.
+  /// Submit triage to backend. Falls back to local rules if backend fails due to connection.
   Future<TriageResponse?> submitTriage(TriageRequest request) async {
     try {
       final res = await ApiClient()
@@ -41,16 +41,16 @@ class TriageService {
         return _localFallback(request);
       }
 
-      // Server responded with error (e.g. 409 conflict)
+      // Server responded with error (e.g. 404, 409 conflict, 500)
       final data = e.response?.data;
       final msg = (data is Map && data['message'] != null)
           ? data['message'].toString()
           : e.message ?? 'Triage isteği başarısız';
+      
       throw Exception(msg);
     } catch (e) {
-      // Any other error: try local fallback
-      debugPrint('Triage hatası, yerel tahmin deneniyor: $e');
-      return _localFallback(request);
+      debugPrint('Beklenmeyen triage hatası: $e');
+      rethrow;
     }
   }
 
@@ -88,7 +88,6 @@ class TriageService {
       }
       return null;
     } on DioException catch (e) {
-      // 404 veya başka hatalar için null döndür (aktif randevu yok demektir)
       if (e.response?.statusCode == 404) {
         return QueueStatus(found: false, message: 'Aktif randevu bulunamadı');
       }
@@ -98,90 +97,51 @@ class TriageService {
     }
   }
 
-  /// Fetch patient history with appointments, triage records, and doctor notes
-  Future<Map<String, dynamic>?> fetchPatientHistory(String tc) async {
-    if (tc.isEmpty) return null;
-    try {
-      final res = await ApiClient().client.get('/appointments/history/$tc');
-      final data = res.data;
-      if (data is Map<String, dynamic>) {
-        return data;
-      }
-      if (data is Map) {
-        return Map<String, dynamic>.from(data);
-      }
-      return null;
-    } on DioException catch (e) {
-      debugPrint('Hasta geçmişi yüklenemedi: $e');
-      return null;
-    } catch (e) {
-      debugPrint('Hasta geçmişi yüklenemedi: $e');
-      return null;
-    }
-  }
-
-  /// Ensure medical data is loaded
   Future<void> _ensureLoaded() async {
     if (_loaded || _loading) return;
-    
+    _loading = true;
     try {
-      _loading = true;
-      final raw = await rootBundle.loadString('assets/medical_data.json');
-      final list = jsonDecode(raw) as List;
+      final jsonStr = await rootBundle.loadString('assets/data/triage_rules.json');
+      final List<dynamic> list = json.decode(jsonStr);
       _rules = list.map((e) => TriageRule.fromJson(e)).toList();
       _loaded = true;
     } catch (e) {
-      throw Exception('Tıbbi veriler yüklenirken hata oluştu: $e');
+      debugPrint('Rules yüklenemedi: $e');
     } finally {
       _loading = false;
     }
   }
 
-  /// Match symptoms to find the most appropriate triage rule (offline fallback)
-  /// Priority: Most matching symptoms > Higher urgency (lower level number)
-  Future<TriageRule?> matchBySymptoms(List<String> picked) async {
-    if (picked.isEmpty) return null;
-    
+  Future<TriageRule?> matchBySymptoms(List<String> symptoms) async {
     await _ensureLoaded();
-    
-    if (_rules.isEmpty) return null;
+    if (symptoms.isEmpty) return null;
 
-    int bestScore = -1;
-    TriageRule? bestRule;
+    TriageRule? bestMatch;
+    int maxMatch = 0;
 
-    for (final r in _rules) {
-      // Count matching symptoms
-      final matchingSymptoms = r.symptoms.where((s) => picked.contains(s)).toList();
-      final score = matchingSymptoms.length;
-      
-      if (score > 0) {
-        // If this rule has more matches, or same matches but higher urgency (lower level)
-        if (score > bestScore ||
-            (score == bestScore &&
-                bestRule != null &&
-                r.urgencyLevel < bestRule.urgencyLevel)) {
-          bestScore = score;
-          bestRule = r;
-        } else if (bestRule == null) {
-          bestScore = score;
-          bestRule = r;
+    for (final rule in _rules) {
+      int count = 0;
+      for (final s in symptoms) {
+        if (rule.symptoms.any((rs) => rs.toLowerCase() == s.toLowerCase())) {
+          count++;
         }
       }
+      if (count > maxMatch) {
+        maxMatch = count;
+        bestMatch = rule;
+      }
     }
-    
-    return bestRule;
+    return bestMatch;
   }
 
-  /// Get all available rules (for debugging/admin purposes)
-  Future<List<TriageRule>> getAllRules() async {
-    await _ensureLoaded();
-    return List.unmodifiable(_rules);
-  }
-
-  /// Reset the service (useful for testing)
-  void reset() {
-    _rules = [];
-    _loaded = false;
-    _loading = false;
+  Future<Map<String, dynamic>?> fetchPatientHistory(String tc) async {
+    if (tc.isEmpty) return null;
+    try {
+      final res = await ApiClient().client.get('/appointments/history/$tc');
+      return res.data as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('History fetch error: $e');
+      return null;
+    }
   }
 }

@@ -24,7 +24,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Query("SELECT COUNT(a) FROM Appointment a WHERE a.appointmentDate = :date AND a.status = :status AND a.queueNumber < :queueNumber")
     long countWaitingAhead(@Param("date") LocalDate date, @Param("status") AppointmentStatus status, @Param("queueNumber") Integer queueNumber);
 
-    List<Appointment> findAllByPatientTcOrderByCreatedAtDesc(String tc);
+    @Query("SELECT a FROM Appointment a WHERE a.patient.tc = :tc ORDER BY a.createdAt DESC")
+    List<Appointment> findAllByPatientTcOrderByCreatedAtDesc(@Param("tc") String tc);
 
     long countByStatusAndCompletedAtAfter(AppointmentStatus status, java.time.LocalDateTime completedAt);
 }
